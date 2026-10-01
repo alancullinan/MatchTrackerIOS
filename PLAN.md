@@ -13,9 +13,9 @@ Rebuild the MatchTracker PWA as a native SwiftUI iOS app, with the PWA as the sp
 | Migration for existing users | Import the PWA's JSON export |
 | Live sharing | Keep Firebase, compatible with the PWA's `live.html` viewer |
 | v1 extras | Live Activity, haptics, keep screen awake |
+| Two-pointers | Football and Ladies Football |
 
 Open questions:
-- Two-pointers for Ladies Football too, or Football only? (The PWA disagrees with itself.)
 - Is the original Swift app's source still around? The PWA's enums say they mirror it.
 
 ## Workflow
