@@ -36,7 +36,7 @@ Open questions:
 
 ## Phase 1: Domain (`MatchCore`)
 
-- [ ] Enums with the PWA's exact raw values
+- [x] Enums with the PWA's exact raw values
 - [ ] Models: `Match`, `Team`, `Player`, `MatchEvent`, `PlayerPanel`, export envelope
 - [ ] JSON decode/encode that round-trips the fixtures (string-or-number ids, nulls, unknown keys)
 - [ ] Score calculation per match type
