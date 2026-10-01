@@ -43,7 +43,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 - Plain `Codable`, `Sendable`, value-type models. The app target maps them to SwiftData; nothing in `MatchCore` knows about storage.
 - **The native model is designed for Swift, not copied from the PWA's JSON.** Make invalid states unrepresentable:
   - `MatchEvent` holds the shared fields (id, period, time, note) plus a `kind` enum with one case per event type, each carrying only its own data (a shot has an outcome and shot type; a card has a card type). No bag of optional fields.
-  - IDs are `UUID`s, wrapped in small typed IDs. New records get random UUIDs. Imported PWA records get a UUID **derived deterministically from the PWA id** (name-based), and keep that id as `legacyID`, so importing the same backup twice produces identical records.
+  - IDs are `UUID`s, wrapped in small typed IDs. New records get random UUIDs. Imported PWA records get a UUID **derived deterministically from the PWA id** (name-based), and keep that id as `legacyID`, so importing the same backup twice produces identical records. Derive event and player UUIDs from the match's PWA id plus their own (e.g. `"<matchId>/<eventId>"`): period-end event ids are bare `Date.now()` numbers and are not guaranteed unique across matches. `MatchCore` is Foundation-only and must build on Linux, so CryptoKit is not available - use a small in-package SHA-1 for a standard version-5 UUID.
   - Teams are referenced by side (`.team1` / `.team2`), not by a team-id string.
   - An unnamed player has `name == nil`; never a `No.N` placeholder.
   - A period-end event records the period that **ended** (e.g. `.firstHalf`).
@@ -63,7 +63,7 @@ Users move from the PWA by exporting a backup there and importing it here. Every
 - **`PWA*` types** (`PWABackup`, `PWAMatch`, `PWAEvent`, ...) mirror the PWA's JSON exactly and are tested to round-trip the fixture. They are never used by the app or stored.
 - **The importer** converts a `PWABackup` into native models. It is tested against `Fixtures/pwa-backup.json`: every match, event and panel converts, and each match's score is the same before and after.
 - The app's own export uses **its own versioned format** of the native model. It does not write PWA files.
-- The one exception is live sharing: the Firebase viewer (`live.html`) reads the PWA's match shape, so a native → `PWAMatch` conversion exists for that feature only.
+- Live sharing writes the PWA's **live-score snapshot**, not a `PWAMatch`: the flat object built by `buildLivePayload()` in the PWA's `script.js` (team names, totals, goals/points per team, period, clock fields, last score). A native → snapshot conversion exists for that feature only.
 
 Traps in the PWA format, all handled in `PWA/` and nowhere else:
 - `MatchPeriod` raw values are display strings (`"1st Half"`, `"Half Time"`, ...); other enums are camelCase (`foulConceded`, `twoPointer`, `ladiesFootball`). The shared enums in `MatchCore` keep these raw values, which is harmless.
