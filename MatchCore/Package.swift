@@ -21,7 +21,8 @@ let package = Package(
         ),
         .testTarget(
             name: "MatchCoreTests",
-            dependencies: ["MatchCore"]
+            dependencies: ["MatchCore"],
+            resources: [.copy("Fixtures")]
         ),
     ]
 )
