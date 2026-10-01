@@ -39,7 +39,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 - [x] Enums with the PWA's exact raw values
 - [x] Models: `Match`, `Team`, `Player`, `MatchEvent`, `PlayerPanel`, export envelope
-- [ ] JSON decode/encode that round-trips the fixtures (string-or-number ids, nulls, unknown keys)
+- [x] JSON decode/encode that round-trips the fixtures (string-or-number ids, nulls, unknown keys)
 - [ ] Score calculation per match type
 - [ ] Period state machine, `isPlayingPeriod`, automatic period-end events
 - [ ] Event sorting by period, then time

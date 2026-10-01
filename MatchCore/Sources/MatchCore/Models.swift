@@ -5,6 +5,16 @@ import Foundation
 //
 // Dates stay in the PWA's string form (`dateTime` is "YYYY-MM-DD", the others
 // ISO-8601) so they write back out unchanged.
+//
+// Decoding is lenient: only what the PWA's own import requires is required,
+// unknown keys are ignored, and missing fields take the PWA's defaults.
+// Encoding writes `null` and omits keys exactly where the PWA does.
+
+extension KeyedDecodingContainer {
+    func decode<T: Decodable>(_ type: T.Type, forKey key: Key, default defaultValue: T) throws -> T {
+        try decodeIfPresent(type, forKey: key) ?? defaultValue
+    }
+}
 
 /// An event id. The PWA's ids are strings (`"1727771234567-123456"`), except
 /// period-end events, whose ids are numbers (`Date.now()`).
@@ -61,8 +71,8 @@ public struct Player: Hashable, Sendable, Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         jerseyNumber = try container.decode(Int.self, forKey: .jerseyNumber)
-        position = try container.decode(String.self, forKey: .position)
-        let stored = try container.decode(String.self, forKey: .name)
+        position = try container.decode(String.self, forKey: .position, default: "")
+        let stored = try container.decodeIfPresent(String.self, forKey: .name)
         name = stored == Self.defaultName(jerseyNumber: jerseyNumber) ? nil : stored
     }
 
@@ -85,6 +95,13 @@ public struct Team: Hashable, Sendable, Codable {
         self.id = id
         self.name = name
         self.players = players
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name, default: "")
+        players = try container.decode([Player].self, forKey: .players, default: [])
     }
 }
 
@@ -134,6 +151,48 @@ public struct MatchEvent: Hashable, Sendable, Codable {
         self.cardType = cardType
         self.wonKickout = wonKickout
         self.noteText = noteText
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, type, period, timeElapsed, teamId, player1Id, player2Id
+        case shotOutcome, shotType, foulOutcome, cardType, wonKickout, noteText
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(EventID.self, forKey: .id)
+        type = try container.decode(EventType.self, forKey: .type)
+        period = try container.decode(MatchPeriod.self, forKey: .period)
+        timeElapsed = try container.decode(Int.self, forKey: .timeElapsed, default: 0)
+        teamId = try container.decodeIfPresent(String.self, forKey: .teamId)
+        player1Id = try container.decodeIfPresent(String.self, forKey: .player1Id)
+        player2Id = try container.decodeIfPresent(String.self, forKey: .player2Id)
+        shotOutcome = try container.decodeIfPresent(ShotOutcome.self, forKey: .shotOutcome)
+        shotType = try container.decodeIfPresent(ShotType.self, forKey: .shotType)
+        foulOutcome = try container.decodeIfPresent(FoulOutcome.self, forKey: .foulOutcome)
+        cardType = try container.decodeIfPresent(CardType.self, forKey: .cardType)
+        wonKickout = try container.decodeIfPresent(Bool.self, forKey: .wonKickout)
+        noteText = try container.decodeIfPresent(String.self, forKey: .noteText)
+    }
+
+    /// Period-end events have only id, type, period and timeElapsed; every
+    /// other event writes all its fields, with `null` for empty ones.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(type, forKey: .type)
+        try container.encode(period, forKey: .period)
+        try container.encode(timeElapsed, forKey: .timeElapsed)
+        guard type != .periodEnd else { return }
+        try container.encode(teamId, forKey: .teamId)
+        try container.encode(player1Id, forKey: .player1Id)
+        try container.encode(player2Id, forKey: .player2Id)
+        try container.encode(shotOutcome, forKey: .shotOutcome)
+        try container.encode(shotType, forKey: .shotType)
+        try container.encode(foulOutcome, forKey: .foulOutcome)
+        try container.encode(cardType, forKey: .cardType)
+        try container.encode(wonKickout, forKey: .wonKickout)
+        try container.encode(noteText, forKey: .noteText)
     }
 }
 
@@ -198,6 +257,57 @@ public struct Match: Hashable, Sendable, Codable {
         self.shareId = shareId
         self.isBroadcasting = isBroadcasting
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, competition, dateTime, venue, referee, matchType, halfLength, extraHalfLength
+        case team1, team2, events, currentPeriod, elapsedTime, isPaused, periodStartTimestamp
+        case shareId, isBroadcasting
+    }
+
+    /// Defaults are the PWA's new-match values.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        competition = try container.decode(String.self, forKey: .competition, default: "")
+        dateTime = try container.decode(String.self, forKey: .dateTime, default: "")
+        venue = try container.decode(String.self, forKey: .venue, default: "")
+        referee = try container.decode(String.self, forKey: .referee, default: "")
+        matchType = try container.decode(MatchType.self, forKey: .matchType, default: .football)
+        halfLength = try container.decode(Int.self, forKey: .halfLength, default: 30)
+        extraHalfLength = try container.decode(Int.self, forKey: .extraHalfLength, default: 10)
+        team1 = try container.decode(Team.self, forKey: .team1)
+        team2 = try container.decode(Team.self, forKey: .team2)
+        events = try container.decode([MatchEvent].self, forKey: .events, default: [])
+        currentPeriod = try container.decode(MatchPeriod.self, forKey: .currentPeriod, default: .notStarted)
+        elapsedTime = try container.decode(Int.self, forKey: .elapsedTime, default: 0)
+        isPaused = try container.decode(Bool.self, forKey: .isPaused, default: true)
+        periodStartTimestamp = try container.decodeIfPresent(Int64.self, forKey: .periodStartTimestamp)
+        shareId = try container.decodeIfPresent(String.self, forKey: .shareId)
+        isBroadcasting = try container.decodeIfPresent(Bool.self, forKey: .isBroadcasting)
+    }
+
+    /// `periodStartTimestamp` is always written (`null` when stopped);
+    /// `shareId` and `isBroadcasting` only once a match has been shared.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(competition, forKey: .competition)
+        try container.encode(dateTime, forKey: .dateTime)
+        try container.encode(venue, forKey: .venue)
+        try container.encode(referee, forKey: .referee)
+        try container.encode(matchType, forKey: .matchType)
+        try container.encode(halfLength, forKey: .halfLength)
+        try container.encode(extraHalfLength, forKey: .extraHalfLength)
+        try container.encode(team1, forKey: .team1)
+        try container.encode(team2, forKey: .team2)
+        try container.encode(events, forKey: .events)
+        try container.encode(currentPeriod, forKey: .currentPeriod)
+        try container.encode(elapsedTime, forKey: .elapsedTime)
+        try container.encode(isPaused, forKey: .isPaused)
+        try container.encode(periodStartTimestamp, forKey: .periodStartTimestamp)
+        try container.encodeIfPresent(shareId, forKey: .shareId)
+        try container.encodeIfPresent(isBroadcasting, forKey: .isBroadcasting)
+    }
 }
 
 /// One slot of a panel. Legacy panels have no jersey numbers; an empty slot has name "".
@@ -261,11 +371,13 @@ public struct Backup: Hashable, Sendable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        version = try container.decode(String.self, forKey: .version)
-        exportDate = try container.decode(String.self, forKey: .exportDate)
+        // Only `matches` is required, as in the PWA's import.
+        version = try container.decode(String.self, forKey: .version, default: "1.0.0")
+        exportDate = try container.decode(String.self, forKey: .exportDate, default: "")
         matches = try container.decode([Match].self, forKey: .matches)
-        playerPanels = try container.decode([PlayerPanel].self, forKey: .playerPanels)
-        lastSelectedPanels = try container.decode([String: String].self, forKey: .lastSelectedPanels)
+        playerPanels = try container.decode([PlayerPanel].self, forKey: .playerPanels, default: [])
+        // Only a remembered choice; a malformed one is not worth failing an import over.
+        lastSelectedPanels = (try? container.decode([String: String].self, forKey: .lastSelectedPanels, default: [:])) ?? [:]
     }
 
     public func encode(to encoder: Encoder) throws {
