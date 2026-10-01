@@ -40,7 +40,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 - [x] Enums with the PWA's exact raw values
 - [x] PWA backup types that round-trip the fixture (string-or-number ids, nulls, unknown keys)
-- [ ] Move the PWA types into `Sources/MatchCore/PWA/` and rename them `PWABackup`, `PWAMatch`, `PWATeam`, `PWAPlayer`, `PWAEvent`, `PWAPanel`, `PWAPanelPlayer`; keep their round-trip tests passing
+- [x] Move the PWA types into `Sources/MatchCore/PWA/` and rename them `PWABackup`, `PWAMatch`, `PWATeam`, `PWAPlayer`, `PWAEvent`, `PWAPanel`, `PWAPanelPlayer`; keep their round-trip tests passing
 - [ ] Native model in `Sources/MatchCore/Model/`: `Match`, `Team`, `Player`, `MatchEvent` (+ `kind` enum), `MatchClock`, `PlayerPanel`, typed IDs (see `CLAUDE.md`)
 - [ ] PWA importer: `PWABackup` -> native model, tested against the fixture (all 71 matches and 6 panels convert; every match's score is unchanged)
 - [ ] Score calculation per match type

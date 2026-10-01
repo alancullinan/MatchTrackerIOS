@@ -1,7 +1,8 @@
 import Foundation
 
-// Value-type mirrors of the PWA's stored objects. Property names are the PWA's
-// JSON keys, so a backup decodes straight into these types.
+// The PWA's backup format, mirrored exactly. Used only to import PWA backups
+// (and, for live sharing, to write the PWA's match shape); the app's own model
+// lives in Model/. PWA quirks are converted by the importer, not here.
 //
 // Dates stay in the PWA's string form (`dateTime` is "YYYY-MM-DD", the others
 // ISO-8601) so they write back out unchanged.
@@ -18,7 +19,7 @@ extension KeyedDecodingContainer {
 
 /// An event id. The PWA's ids are strings (`"1727771234567-123456"`), except
 /// period-end events, whose ids are numbers (`Date.now()`).
-public enum EventID: Hashable, Sendable, Codable {
+public enum PWAEventID: Hashable, Sendable, Codable {
     case string(String)
     case number(Int64)
 
@@ -40,58 +41,36 @@ public enum EventID: Hashable, Sendable, Codable {
     }
 }
 
-public struct Player: Hashable, Sendable, Codable {
+public struct PWAPlayer: Hashable, Sendable, Codable {
     public var id: String
-    /// `nil` when the player still has the PWA's default name, `No.<jerseyNumber>`.
+    /// As stored: an unnamed player is `"No.<jerseyNumber>"`. `nil` only if the key is missing.
     public var name: String?
     public var jerseyNumber: Int
     public var position: String
 
-    public init(id: String, name: String? = nil, jerseyNumber: Int, position: String = "") {
+    public init(id: String, name: String?, jerseyNumber: Int, position: String = "") {
         self.id = id
         self.name = name
         self.jerseyNumber = jerseyNumber
         self.position = position
     }
 
-    /// The name as the PWA stores it: the real name, or `No.<jerseyNumber>`.
-    public var storedName: String {
-        name ?? Self.defaultName(jerseyNumber: jerseyNumber)
-    }
-
-    static func defaultName(jerseyNumber: Int) -> String {
-        "No.\(jerseyNumber)"
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id, name, jerseyNumber, position
-    }
-
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
         jerseyNumber = try container.decode(Int.self, forKey: .jerseyNumber)
         position = try container.decode(String.self, forKey: .position, default: "")
-        let stored = try container.decodeIfPresent(String.self, forKey: .name)
-        name = stored == Self.defaultName(jerseyNumber: jerseyNumber) ? nil : stored
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(storedName, forKey: .name)
-        try container.encode(jerseyNumber, forKey: .jerseyNumber)
-        try container.encode(position, forKey: .position)
     }
 }
 
-public struct Team: Hashable, Sendable, Codable {
+public struct PWATeam: Hashable, Sendable, Codable {
     public var id: String
     public var name: String
     /// 30 players, jersey numbers 1-30.
-    public var players: [Player]
+    public var players: [PWAPlayer]
 
-    public init(id: String, name: String, players: [Player]) {
+    public init(id: String, name: String, players: [PWAPlayer]) {
         self.id = id
         self.name = name
         self.players = players
@@ -101,12 +80,12 @@ public struct Team: Hashable, Sendable, Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name, default: "")
-        players = try container.decode([Player].self, forKey: .players, default: [])
+        players = try container.decode([PWAPlayer].self, forKey: .players, default: [])
     }
 }
 
-public struct MatchEvent: Hashable, Sendable, Codable {
-    public var id: EventID
+public struct PWAEvent: Hashable, Sendable, Codable {
+    public var id: PWAEventID
     public var type: EventType
     public var period: MatchPeriod
     /// Seconds into `period`.
@@ -124,7 +103,7 @@ public struct MatchEvent: Hashable, Sendable, Codable {
     public var noteText: String?
 
     public init(
-        id: EventID,
+        id: PWAEventID,
         type: EventType,
         period: MatchPeriod,
         timeElapsed: Int,
@@ -160,7 +139,7 @@ public struct MatchEvent: Hashable, Sendable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(EventID.self, forKey: .id)
+        id = try container.decode(PWAEventID.self, forKey: .id)
         type = try container.decode(EventType.self, forKey: .type)
         period = try container.decode(MatchPeriod.self, forKey: .period)
         timeElapsed = try container.decode(Int.self, forKey: .timeElapsed, default: 0)
@@ -196,7 +175,7 @@ public struct MatchEvent: Hashable, Sendable, Codable {
     }
 }
 
-public struct Match: Hashable, Sendable, Codable {
+public struct PWAMatch: Hashable, Sendable, Codable {
     public var id: String
     public var competition: String
     /// "YYYY-MM-DD", as entered in the PWA's date field.
@@ -207,9 +186,9 @@ public struct Match: Hashable, Sendable, Codable {
     /// Minutes. Stored by the PWA but not used by its timer.
     public var halfLength: Int
     public var extraHalfLength: Int
-    public var team1: Team
-    public var team2: Team
-    public var events: [MatchEvent]
+    public var team1: PWATeam
+    public var team2: PWATeam
+    public var events: [PWAEvent]
     public var currentPeriod: MatchPeriod
     /// Seconds into `currentPeriod`.
     public var elapsedTime: Int
@@ -229,9 +208,9 @@ public struct Match: Hashable, Sendable, Codable {
         matchType: MatchType,
         halfLength: Int,
         extraHalfLength: Int,
-        team1: Team,
-        team2: Team,
-        events: [MatchEvent] = [],
+        team1: PWATeam,
+        team2: PWATeam,
+        events: [PWAEvent] = [],
         currentPeriod: MatchPeriod = .notStarted,
         elapsedTime: Int = 0,
         isPaused: Bool = true,
@@ -275,9 +254,9 @@ public struct Match: Hashable, Sendable, Codable {
         matchType = try container.decode(MatchType.self, forKey: .matchType, default: .football)
         halfLength = try container.decode(Int.self, forKey: .halfLength, default: 30)
         extraHalfLength = try container.decode(Int.self, forKey: .extraHalfLength, default: 10)
-        team1 = try container.decode(Team.self, forKey: .team1)
-        team2 = try container.decode(Team.self, forKey: .team2)
-        events = try container.decode([MatchEvent].self, forKey: .events, default: [])
+        team1 = try container.decode(PWATeam.self, forKey: .team1)
+        team2 = try container.decode(PWATeam.self, forKey: .team2)
+        events = try container.decode([PWAEvent].self, forKey: .events, default: [])
         currentPeriod = try container.decode(MatchPeriod.self, forKey: .currentPeriod, default: .notStarted)
         elapsedTime = try container.decode(Int.self, forKey: .elapsedTime, default: 0)
         isPaused = try container.decode(Bool.self, forKey: .isPaused, default: true)
@@ -311,7 +290,7 @@ public struct Match: Hashable, Sendable, Codable {
 }
 
 /// One slot of a panel. Legacy panels have no jersey numbers; an empty slot has name "".
-public struct PanelPlayer: Hashable, Sendable, Codable {
+public struct PWAPanelPlayer: Hashable, Sendable, Codable {
     public var id: String
     public var name: String
     public var jerseyNumber: Int?
@@ -323,14 +302,14 @@ public struct PanelPlayer: Hashable, Sendable, Codable {
     }
 }
 
-public struct PlayerPanel: Hashable, Sendable, Codable {
+public struct PWAPanel: Hashable, Sendable, Codable {
     public var id: String
     public var name: String
-    public var players: [PanelPlayer]
+    public var players: [PWAPanelPlayer]
     /// ISO-8601. Missing on legacy panels.
     public var createdDate: String?
 
-    public init(id: String, name: String, players: [PanelPlayer], createdDate: String? = nil) {
+    public init(id: String, name: String, players: [PWAPanelPlayer], createdDate: String? = nil) {
         self.id = id
         self.name = name
         self.players = players
@@ -339,20 +318,20 @@ public struct PlayerPanel: Hashable, Sendable, Codable {
 }
 
 /// The PWA's export file. `matchCount` and `panelCount` are derived when writing.
-public struct Backup: Hashable, Sendable, Codable {
+public struct PWABackup: Hashable, Sendable, Codable {
     public var version: String
     /// ISO-8601 with milliseconds, e.g. "2026-10-01T20:39:21.651Z".
     public var exportDate: String
-    public var matches: [Match]
-    public var playerPanels: [PlayerPanel]
+    public var matches: [PWAMatch]
+    public var playerPanels: [PWAPanel]
     /// Last panel chosen per team, keyed `"<matchId>-team1"` / `"<matchId>-team2"`, valued by panel id.
     public var lastSelectedPanels: [String: String]
 
     public init(
         version: String = "1.0.0",
         exportDate: String,
-        matches: [Match],
-        playerPanels: [PlayerPanel],
+        matches: [PWAMatch],
+        playerPanels: [PWAPanel],
         lastSelectedPanels: [String: String]
     ) {
         self.version = version
@@ -374,8 +353,8 @@ public struct Backup: Hashable, Sendable, Codable {
         // Only `matches` is required, as in the PWA's import.
         version = try container.decode(String.self, forKey: .version, default: "1.0.0")
         exportDate = try container.decode(String.self, forKey: .exportDate, default: "")
-        matches = try container.decode([Match].self, forKey: .matches)
-        playerPanels = try container.decode([PlayerPanel].self, forKey: .playerPanels, default: [])
+        matches = try container.decode([PWAMatch].self, forKey: .matches)
+        playerPanels = try container.decode([PWAPanel].self, forKey: .playerPanels, default: [])
         // Only a remembered choice; a malformed one is not worth failing an import over.
         lastSelectedPanels = (try? container.decode([String: String].self, forKey: .lastSelectedPanels, default: [:])) ?? [:]
     }
