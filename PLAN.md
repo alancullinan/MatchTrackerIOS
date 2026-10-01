@@ -69,6 +69,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 ## Phase 4: Data
 
 - [ ] Export via `fileExporter` / `ShareLink`, file only
+  - Write keys in the PWA's order, formatted like `JSON.stringify(…, null, 2)`. `JSONEncoder` does not keep key order, and the PWA's import compares matches by `JSON.stringify`, so otherwise every match re-imported into the PWA shows as a conflict.
 - [ ] Import with conflict-resolution screen
 - [ ] Last-backup indicator
 
