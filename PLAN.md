@@ -36,7 +36,6 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] Clone the repo on the Mac and create the Xcode project **inside the cloned folder**: iOS App, SwiftUI, SwiftData, product name `MatchTracker`. Untick "Create Git repository" - the folder already is one
 - [x] Add a local Swift package `MatchCore` at the repo root (File > New > Package) and link it to the app target
 - [x] Export a few real matches from the PWA into `MatchCore/Tests/MatchCoreTests/Fixtures/`
-- [ ] Turn on iCloud in Xcode: MatchTracker target > Signing & Capabilities > **+ Capability > iCloud**, tick **CloudKit**, add container `iCloud.com.alancullinan.MatchTracker`; then **+ Capability > Background Modes**, tick **Remote notifications** (needs the paid developer account)
 
 ## Phase 1: Domain (`MatchCore`)
 
@@ -53,7 +52,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 ## Phase 2: Core tracking (MVP)
 
-- [ ] SwiftData models (CloudKit-compatible, see `CLAUDE.md`) and mapping to/from `MatchCore`; iCloud sync on
+- [ ] SwiftData models (CloudKit-compatible, see `CLAUDE.md`) and mapping to/from `MatchCore`; stored on the device only until iCloud is turned on in Phase 4
 - [ ] Home and match list with filter
 - [ ] Match create/edit form
 - [ ] Match details: scoreboard, wall-clock timer, period transitions
@@ -72,6 +71,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 ## Phase 4: Data
 
+- [ ] Join the paid Apple Developer Program, then turn on iCloud in Xcode: MatchTracker target > Signing & Capabilities > **+ Capability > iCloud**, tick **CloudKit**, add container `iCloud.com.alancullinan.MatchTracker`; then **+ Capability > Background Modes**, tick **Remote notifications**. Set the store's `cloudKitDatabase` so SwiftData syncs
 - [ ] Import the owner's PWA backup (a hidden or one-off screen is fine)
 - [ ] iCloud sync status in Settings (signed out / syncing / up to date)
 - [ ] Optional: export everything to Files as a backup
