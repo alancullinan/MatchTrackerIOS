@@ -20,13 +20,19 @@ It is a rewrite of the PWA at [`alancullinan/matchtrackerpwa`](https://github.co
 ## Architecture
 
 ```
-MatchTracker.xcodeproj
-MatchTracker/          iOS app target (SwiftUI, SwiftData)
-MatchCore/             local Swift package - the domain layer
+MatchTracker/                   Xcode project folder
+  MatchTracker.xcodeproj        open this in Xcode
+  MatchTracker/                 iOS app target sources (SwiftUI, SwiftData)
+MatchCore/                      local Swift package - the domain layer (linked as ../MatchCore)
+  Package.swift
   Sources/MatchCore/
   Tests/MatchCoreTests/
-    Fixtures/          real PWA export JSONs
+    Fixtures/                   real PWA export JSONs (anonymised if the repo is public)
+CLAUDE.md, PLAN.md              repo root - Claude in Xcode does not show these in the project
+                                navigator; read them from here at the start of each task
 ```
+
+The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Drive): git commits fail with "Resource deadlock avoided" and the repo can be corrupted. Keep it in e.g. `~/Developer/MatchTrackerIOS`.
 
 ### MatchCore rules
 - **Foundation only.** Never import SwiftUI, SwiftData, UIKit or any Apple-platform-only framework. It must build and test with `swift test` on macOS *and* Linux, so Claude Code cloud sessions can run its tests.
@@ -78,4 +84,4 @@ Traps in that format:
 ## Commands
 
 - `MatchCore` tests: `cd MatchCore && swift test` (macOS or Linux).
-- App: build and test from Xcode (⌘U), or `xcodebuild test -scheme MatchTracker -destination 'platform=iOS Simulator,name=iPhone 16'`.
+- App: build and test from Xcode (⌘U), or `xcodebuild test -project MatchTracker/MatchTracker.xcodeproj -scheme MatchTracker -destination 'platform=iOS Simulator,name=iPhone 17'`.

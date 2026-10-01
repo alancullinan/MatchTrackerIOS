@@ -30,8 +30,8 @@ Open questions:
 - [x] Create the GitHub repo
 - [x] Add `CLAUDE.md` and `PLAN.md`
 - [ ] Install the Claude GitHub App on the repo (so Claude Code sessions can open it)
-- [ ] Clone the repo on the Mac and create the Xcode project **inside the cloned folder**: iOS App, SwiftUI, SwiftData, product name `MatchTracker`. Untick "Create Git repository" - the folder already is one
-- [ ] Add a local Swift package `MatchCore` at the repo root (File > New > Package) and link it to the app target
+- [x] Clone the repo on the Mac and create the Xcode project **inside the cloned folder**: iOS App, SwiftUI, SwiftData, product name `MatchTracker`. Untick "Create Git repository" - the folder already is one
+- [x] Add a local Swift package `MatchCore` at the repo root (File > New > Package) and link it to the app target
 - [ ] Export a few real matches from the PWA into `MatchCore/Tests/MatchCoreTests/Fixtures/`
 
 ## Phase 1: Domain (`MatchCore`)
