@@ -40,7 +40,7 @@ private func reencode<T: Codable>(_ type: T.Type, _ json: String) throws -> [Str
 
 @Test func pwaBackupRoundTripsExactly() throws {
     let original = try loadFixture("pwa-backup")
-    let backup = try JSONDecoder().decode(Backup.self, from: original)
+    let backup = try JSONDecoder().decode(PWABackup.self, from: original)
     let written = try JSONEncoder().encode(backup)
 
     let difference = firstDifference(try parse(original), try parse(written))
@@ -50,12 +50,12 @@ private func reencode<T: Codable>(_ type: T.Type, _ json: String) throws -> [Str
 // MARK: - Writing nulls exactly where the PWA does
 
 @Test func periodEndEventWritesOnlyItsFourFields() throws {
-    let object = try reencode(MatchEvent.self, #"{"id":1754851604584,"type":"periodEnd","period":"Full Time","timeElapsed":1900}"#)
+    let object = try reencode(PWAEvent.self, #"{"id":1754851604584,"type":"periodEnd","period":"Full Time","timeElapsed":1900}"#)
     #expect(Set(object.keys) == ["id", "type", "period", "timeElapsed"])
 }
 
 @Test func otherEventsWriteEmptyFieldsAsNull() throws {
-    let event = MatchEvent(id: .string("1-2"), type: .shot, period: .firstHalf, timeElapsed: 60, teamId: "t", shotOutcome: .point, shotType: .free)
+    let event = PWAEvent(id: .string("1-2"), type: .shot, period: .firstHalf, timeElapsed: 60, teamId: "t", shotOutcome: .point, shotType: .free)
     let object = try #require(try parse(JSONEncoder().encode(event)) as? [String: Any])
     #expect(object.count == 13)
     #expect(object["player1Id"] is NSNull)
@@ -64,7 +64,7 @@ private func reencode<T: Codable>(_ type: T.Type, _ json: String) throws -> [Str
 }
 
 @Test func matchWritesNullTimestampButOmitsShareFields() throws {
-    let object = try reencode(Match.self, #"{"id":"m","team1":{"id":"a"},"team2":{"id":"b"}}"#)
+    let object = try reencode(PWAMatch.self, #"{"id":"m","team1":{"id":"a"},"team2":{"id":"b"}}"#)
     #expect(object["periodStartTimestamp"] is NSNull)
     #expect(object["shareId"] == nil)
     #expect(object["isBroadcasting"] == nil)
@@ -73,7 +73,7 @@ private func reencode<T: Codable>(_ type: T.Type, _ json: String) throws -> [Str
 // MARK: - Lenient reading
 
 @Test func unknownKeysAreIgnored() throws {
-    let backup = try JSONDecoder().decode(Backup.self, from: Data("""
+    let backup = try JSONDecoder().decode(PWABackup.self, from: Data("""
         {"matches":[{"id":"m","team1":{"id":"a","colour":"red"},"team2":{"id":"b"},"weather":"wet",
           "events":[{"id":"e","type":"note","period":"1st Half","timeElapsed":5,"noteText":"x","rating":4}]}],
          "futureField":true}
@@ -82,7 +82,7 @@ private func reencode<T: Codable>(_ type: T.Type, _ json: String) throws -> [Str
 }
 
 @Test func minimalMatchTakesThePWADefaults() throws {
-    let match = try JSONDecoder().decode(Match.self, from: Data(#"{"id":"m","team1":{"id":"a"},"team2":{"id":"b"}}"#.utf8))
+    let match = try JSONDecoder().decode(PWAMatch.self, from: Data(#"{"id":"m","team1":{"id":"a"},"team2":{"id":"b"}}"#.utf8))
     #expect(match.matchType == .football)
     #expect(match.halfLength == 30)
     #expect(match.extraHalfLength == 10)
@@ -94,19 +94,20 @@ private func reencode<T: Codable>(_ type: T.Type, _ json: String) throws -> [Str
 }
 
 @Test func playerWithoutNameOrPositionDecodes() throws {
-    let player = try JSONDecoder().decode(Player.self, from: Data(#"{"id":"p","jerseyNumber":3}"#.utf8))
+    let player = try JSONDecoder().decode(PWAPlayer.self, from: Data(#"{"id":"p","jerseyNumber":3}"#.utf8))
     #expect(player.name == nil)
     #expect(player.position == "")
+    #expect(try reencode(PWAPlayer.self, #"{"id":"p","jerseyNumber":3}"#)["name"] == nil)
 }
 
 @Test func backupNeedsOnlyMatches() throws {
-    let backup = try JSONDecoder().decode(Backup.self, from: Data(#"{"matches":[]}"#.utf8))
+    let backup = try JSONDecoder().decode(PWABackup.self, from: Data(#"{"matches":[]}"#.utf8))
     #expect(backup.playerPanels.isEmpty)
     #expect(backup.lastSelectedPanels.isEmpty)
 }
 
 @Test func malformedLastSelectedPanelsIsDropped() throws {
-    let backup = try JSONDecoder().decode(Backup.self, from: Data(#"{"matches":[],"lastSelectedPanels":"oops"}"#.utf8))
+    let backup = try JSONDecoder().decode(PWABackup.self, from: Data(#"{"matches":[],"lastSelectedPanels":"oops"}"#.utf8))
     #expect(backup.lastSelectedPanels.isEmpty)
 }
 
@@ -114,12 +115,12 @@ private func reencode<T: Codable>(_ type: T.Type, _ json: String) throws -> [Str
 
 @Test func backupWithoutMatchesIsRejected() {
     #expect(throws: DecodingError.self) {
-        try JSONDecoder().decode(Backup.self, from: Data(#"{"playerPanels":[]}"#.utf8))
+        try JSONDecoder().decode(PWABackup.self, from: Data(#"{"playerPanels":[]}"#.utf8))
     }
 }
 
 @Test func matchWithoutTeamsIsRejected() {
     #expect(throws: DecodingError.self) {
-        try JSONDecoder().decode(Match.self, from: Data(#"{"id":"m","team1":{"id":"a"}}"#.utf8))
+        try JSONDecoder().decode(PWAMatch.self, from: Data(#"{"id":"m","team1":{"id":"a"}}"#.utf8))
     }
 }

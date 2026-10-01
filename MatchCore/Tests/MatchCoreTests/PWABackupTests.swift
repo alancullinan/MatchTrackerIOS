@@ -18,7 +18,7 @@ private func jsonObject<T: Encodable>(_ value: T) throws -> NSDictionary {
 // MARK: - The real backup
 
 @Test func decodesThePWABackup() throws {
-    let backup = try JSONDecoder().decode(Backup.self, from: loadFixture("pwa-backup"))
+    let backup = try JSONDecoder().decode(PWABackup.self, from: loadFixture("pwa-backup"))
 
     #expect(backup.version == "1.0.0")
     #expect(backup.matchCount == 71)
@@ -38,40 +38,27 @@ private func jsonObject<T: Encodable>(_ value: T) throws -> NSDictionary {
 // MARK: - Event ids
 
 @Test func eventIDDecodesStringOrNumber() throws {
-    #expect(try decode([EventID].self, #"["1727771234567-123456", 1727771234567]"#)
+    #expect(try decode([PWAEventID].self, #"["1727771234567-123456", 1727771234567]"#)
         == [.string("1727771234567-123456"), .number(1_727_771_234_567)])
 }
 
 @Test func eventIDEncodesBackToItsOriginalType() throws {
-    let data = try JSONEncoder().encode([EventID.string("1-2"), .number(1_727_771_234_567)])
+    let data = try JSONEncoder().encode([PWAEventID.string("1-2"), .number(1_727_771_234_567)])
     #expect(String(decoding: data, as: UTF8.self) == #"["1-2",1727771234567]"#)
 }
 
 // MARK: - Players
 
-@Test func defaultPlayerNameDecodesAsUnnamed() throws {
-    let player = try decode(Player.self, #"{"id":"p","name":"No.7","jerseyNumber":7,"position":""}"#)
-    #expect(player.name == nil)
-    #expect(player.storedName == "No.7")
-}
-
-@Test func otherPlayerNamesAreKept() throws {
-    let named = try decode(Player.self, #"{"id":"p","name":"Player 1","jerseyNumber":7,"position":""}"#)
-    #expect(named.name == "Player 1")
-    // Only the player's own default counts as unnamed.
-    let mismatched = try decode(Player.self, #"{"id":"p","name":"No.8","jerseyNumber":7,"position":""}"#)
-    #expect(mismatched.name == "No.8")
-}
-
-@Test func unnamedPlayerEncodesAsDefaultName() throws {
-    let object = try jsonObject(Player(id: "p", jerseyNumber: 12))
-    #expect(object["name"] as? String == "No.12")
+@Test func playerNameIsKeptAsStored() throws {
+    // Converting "No.N" to unnamed is the importer's job, not the PWA type's.
+    let player = try decode(PWAPlayer.self, #"{"id":"p","name":"No.7","jerseyNumber":7,"position":""}"#)
+    #expect(player.name == "No.7")
 }
 
 // MARK: - Events
 
 @Test func decodesPeriodEndEventWithMostFieldsMissing() throws {
-    let event = try decode(MatchEvent.self, #"{"id":1754851604584,"type":"periodEnd","period":"Half Time","timeElapsed":1843}"#)
+    let event = try decode(PWAEvent.self, #"{"id":1754851604584,"type":"periodEnd","period":"Half Time","timeElapsed":1843}"#)
     #expect(event.id == .number(1_754_851_604_584))
     #expect(event.period == .halfTime)
     #expect(event.timeElapsed == 1843)
@@ -79,7 +66,7 @@ private func jsonObject<T: Encodable>(_ value: T) throws -> NSDictionary {
 }
 
 @Test func decodesEventWithNullFields() throws {
-    let event = try decode(MatchEvent.self, """
+    let event = try decode(PWAEvent.self, """
         {"id":"1-2","type":"kickout","period":"1st Half","timeElapsed":95,"teamId":"t","player1Id":null,
          "player2Id":null,"shotOutcome":null,"shotType":null,"foulOutcome":null,"cardType":null,
          "wonKickout":true,"noteText":null}
@@ -92,20 +79,20 @@ private func jsonObject<T: Encodable>(_ value: T) throws -> NSDictionary {
 // MARK: - Panels
 
 @Test func decodesLegacyPanelWithoutJerseyNumbers() throws {
-    let panel = try decode(PlayerPanel.self, #"{"id":"x","name":"U16","players":[{"id":"a","name":"Player 1"}]}"#)
-    #expect(panel.players == [PanelPlayer(id: "a", name: "Player 1", jerseyNumber: nil)])
+    let panel = try decode(PWAPanel.self, #"{"id":"x","name":"U16","players":[{"id":"a","name":"Player 1"}]}"#)
+    #expect(panel.players == [PWAPanelPlayer(id: "a", name: "Player 1", jerseyNumber: nil)])
     #expect(panel.createdDate == nil)
 }
 
-// MARK: - Backup envelope
+// MARK: - PWABackup envelope
 
 @Test func backupWritesDerivedCounts() throws {
-    let team = Team(id: "t", name: "Team A", players: [])
-    let match = Match(
+    let team = PWATeam(id: "t", name: "Team A", players: [])
+    let match = PWAMatch(
         id: "m", competition: "", dateTime: "2025-08-10", venue: "", referee: "",
         matchType: .hurling, halfLength: 30, extraHalfLength: 10, team1: team, team2: team
     )
-    let backup = Backup(exportDate: "2026-10-01T20:39:21.651Z", matches: [match, match], playerPanels: [], lastSelectedPanels: [:])
+    let backup = PWABackup(exportDate: "2026-10-01T20:39:21.651Z", matches: [match, match], playerPanels: [], lastSelectedPanels: [:])
     let object = try jsonObject(backup)
     #expect(object["matchCount"] as? Int == 2)
     #expect(object["panelCount"] as? Int == 0)
