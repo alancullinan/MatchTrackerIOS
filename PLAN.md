@@ -1,6 +1,6 @@
 # MatchTracker iOS - Plan
 
-Rebuild the MatchTracker PWA as a native SwiftUI iOS app, with the PWA as the specification. Code is written mostly in Claude in Xcode; this repo on GitHub is the single shared place for the code, the rules (`CLAUDE.md`) and this plan. Tick items off as they land.
+Rebuild the MatchTracker PWA as a native SwiftUI iOS app, with the PWA as the specification. Code is written mostly with Claude Code in Terminal; this repo on GitHub is the single shared place for the code, the rules (`CLAUDE.md`) and this plan. Tick items off as they land.
 
 ## Decisions
 
@@ -15,15 +15,16 @@ Rebuild the MatchTracker PWA as a native SwiftUI iOS app, with the PWA as the sp
 | v1 extras | Live Activity, haptics, keep screen awake |
 | Two-pointers | Football and Ladies Football |
 
-Open questions:
-- Is the original Swift app's source still around? The PWA's enums say they mirror it.
-
 ## Workflow
 
-1. Pick the next unticked item below.
-2. Build it in Claude in Xcode on a branch.
-3. Push and open a PR. Ask a Claude Code session to review it if useful.
-4. Merge, tick the item here.
+Claude Code in Terminal does the work; Xcode is for looking at and running the app.
+
+1. In Terminal, in the repo folder, run `claude` and ask for the next unticked item below. It reads `CLAUDE.md` automatically.
+2. Claude Code pulls, branches, writes the code and tests, builds, and fixes errors.
+3. Check the result in Xcode: Previews, the Simulator, or your phone. Ask for changes in Terminal.
+4. Claude Code commits, pushes and opens a PR. Merge it on GitHub and tick the item here.
+
+Don't let Claude Code and Claude in Xcode edit the same files at the same time. Decisions that matter go into `CLAUDE.md` or this file, not just a chat.
 
 ## Phase 0: Setup
 

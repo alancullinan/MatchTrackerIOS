@@ -14,7 +14,7 @@ Other MatchTracker repos exist (`MatchTracker`, the original 2025 Swift app, and
 
 ## How we work
 
-- Most coding happens in **Claude in Xcode** on a Mac (builds, Previews, Simulator, tests).
+- Most coding happens in **Claude Code in Terminal** on the Mac, run from the repo root. Xcode is for Previews, the Simulator, device runs and signing.
 - **GitHub is the shared space.** Everything lives in this repo - code, `CLAUDE.md`, `PLAN.md` - so any Claude Code session can read it, review PRs and discuss.
 - Work on a branch and open a PR; keep PRs to one checklist item or a small group of them.
 - Never include an AI model name in commits, PRs or code comments.
