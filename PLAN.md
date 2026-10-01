@@ -1,6 +1,6 @@
 # MatchTracker iOS - Plan
 
-Rebuild the MatchTracker PWA as a native SwiftUI iOS app, with the PWA as the specification. Code is written mostly with Claude Code in Terminal; this repo on GitHub is the single shared place for the code, the rules (`CLAUDE.md`) and this plan. Tick items off as they land.
+Rebuild the MatchTracker PWA as a native SwiftUI iOS app. The PWA defines what the app does and the sport's rules; the iOS design, model and UI are native. Code is written mostly with Claude Code in Terminal; this repo on GitHub is the single shared place for the code, the rules (`CLAUDE.md`) and this plan. Tick items off as they land.
 
 ## Decisions
 
@@ -10,7 +10,8 @@ Rebuild the MatchTracker PWA as a native SwiftUI iOS app, with the PWA as the sp
 | Minimum iOS | 17 |
 | Persistence | SwiftData, single store |
 | Domain logic | `MatchCore` local Swift package, Foundation only |
-| Migration for existing users | Import the PWA's JSON export |
+| Data model | Native Swift model; PWA format only inside an importer |
+| Migration for existing users | Import the PWA's JSON backup (one-way; the app exports its own format) |
 | Live sharing | Keep Firebase, compatible with the PWA's `live.html` viewer |
 | v1 extras | Live Activity, haptics, keep screen awake |
 | Two-pointers | Football and Ladies Football |
@@ -38,14 +39,17 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 ## Phase 1: Domain (`MatchCore`)
 
 - [x] Enums with the PWA's exact raw values
-- [x] Models: `Match`, `Team`, `Player`, `MatchEvent`, `PlayerPanel`, export envelope
-- [x] JSON decode/encode that round-trips the fixtures (string-or-number ids, nulls, unknown keys)
+- [x] PWA backup types that round-trip the fixture (string-or-number ids, nulls, unknown keys)
+- [ ] Move the PWA types into `Sources/MatchCore/PWA/` and rename them `PWABackup`, `PWAMatch`, `PWATeam`, `PWAPlayer`, `PWAEvent`, `PWAPanel`, `PWAPanelPlayer`; keep their round-trip tests passing
+- [ ] Native model in `Sources/MatchCore/Model/`: `Match`, `Team`, `Player`, `MatchEvent` (+ `kind` enum), `MatchClock`, `PlayerPanel`, typed IDs (see `CLAUDE.md`)
+- [ ] PWA importer: `PWABackup` -> native model, tested against the fixture (all 71 matches and 6 panels convert; every match's score is unchanged)
 - [ ] Score calculation per match type
-- [ ] Period state machine, `isPlayingPeriod`, automatic period-end events
+- [ ] Period state machine, playing periods, automatic period-end events
 - [ ] Event sorting by period, then time
-- [ ] Panel normalisation (30 fixed slots, legacy panels)
+- [ ] Panels: 30 fixed slots; legacy panels normalised
 - [ ] Import analysis: new / identical / conflicting
 - [ ] Stats: shooting accuracy, scorers
+- [ ] The app's own backup format (versioned JSON of the native model)
 
 ## Phase 2: Core tracking (MVP)
 
@@ -68,9 +72,9 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 ## Phase 4: Data
 
-- [ ] Export via `fileExporter` / `ShareLink`, file only
+- [ ] Export the app's own backup format via `fileExporter` / `ShareLink`, file only
   - Write keys in the PWA's order, formatted like `JSON.stringify(…, null, 2)`. `JSONEncoder` does not keep key order, and the PWA's import compares matches by `JSON.stringify`, so otherwise every match re-imported into the PWA shows as a conflict.
-- [ ] Import with conflict-resolution screen
+- [ ] Import a PWA backup or the app's own backup, with conflict-resolution screen
 - [ ] Last-backup indicator
 
 ## Phase 5: Sharing and stats
