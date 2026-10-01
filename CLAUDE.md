@@ -43,27 +43,33 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 - Plain `Codable`, `Sendable`, value-type models. The app target maps them to SwiftData; nothing in `MatchCore` knows about storage.
 - **The native model is designed for Swift, not copied from the PWA's JSON.** Make invalid states unrepresentable:
   - `MatchEvent` holds the shared fields (id, period, time, note) plus a `kind` enum with one case per event type, each carrying only its own data (a shot has an outcome and shot type; a card has a card type). No bag of optional fields.
-  - IDs are `UUID`s, wrapped in small typed IDs. New records get random UUIDs. Imported PWA records get a UUID **derived deterministically from the PWA id** (name-based), and keep that id as `legacyID`, so importing the same backup twice produces identical records. Derive event and player UUIDs from the match's PWA id plus their own, and panel players' from the panel's id plus their own: period-end event ids are bare `Date.now()` numbers and are not guaranteed unique across matches. Prefix every name with its record type so different kinds of record can never derive the same UUID: `"match/<id>"`, `"event/<matchId>/<eventId>"`, `"player/<matchId>/<playerId>"`, `"panel/<id>"`, `"panelPlayer/<panelId>/<playerId>"`. `MatchCore` is Foundation-only and must build on Linux, so CryptoKit is not available - use a small in-package SHA-1 for a standard version-5 UUID.
+  - IDs are random `UUID`s, wrapped in small typed IDs. Records imported from the PWA also keep their PWA id as `legacyID`, only so the import can skip a match it has already brought in.
   - Teams are referenced by side (`.team1` / `.team2`), not by a team-id string.
   - An unnamed player has `name == nil`; never a `No.N` placeholder.
   - A period-end event records the period that **ended** (e.g. `.firstHalf`).
   - The clock is `period` + seconds banked + `runningSince: Date?`, so running time is always derived from the wall clock.
-- **All match logic lives here**, not in views: scoring, period transitions, event sorting, stats, panel normalisation, import analysis. Views call it; they do not re-implement it.
+- **All match logic lives here**, not in views: scoring, period transitions, event sorting, stats, panel normalisation. Views call it; they do not re-implement it.
 - Every logic change comes with a test.
 
 ### App rules
 - iOS 17+, SwiftUI, `NavigationStack`, `@Observable`.
-- **One persistent store (SwiftData).** Never add a second store, cache or mirror of match data. The PWA lost users' recent matches to exactly that (two stores, read from the stale one).
+- **One persistent store: SwiftData, synced to the user's private iCloud database (CloudKit).** iCloud sync is part of that store, not a second one. Never add another store, cache or mirror of match data - the PWA lost recent matches to exactly that (two stores, read from the stale one).
+- **SwiftData models must stay CloudKit-compatible**, or sync silently stops working:
+  - every stored property is optional or has a default value;
+  - no `@Attribute(.unique)` - uniqueness is enforced in code;
+  - every relationship is optional, and no `.deny` delete rules;
+  - schema changes are additive only (add properties; never rename or remove one once shipped).
+- Each user's data lives in their own iCloud account; there is no shared server. Live score sharing (Firebase) is separate and sends only a snapshot.
+- Keep a match **self-contained** (its teams, players and events belong to it) so a single match can be shared later. How is undecided - see `PLAN.md`.
 - Never delete data that has not been verified - e.g. a migration writes, reads back and compares before removing anything.
 
-## PWA backups (import only)
+## Importing the owner's PWA data (one-time)
 
-Users move from the PWA by exporting a backup there and importing it here. Everything PWA-specific lives in `Sources/MatchCore/PWA/`:
+Only the owner has used the PWA, so PWA import is a **one-time migration** of their data, not a user-facing feature. Everything PWA-specific lives in `Sources/MatchCore/PWA/`:
 
 - **`PWA*` types** (`PWABackup`, `PWAMatch`, `PWAEvent`, ...) mirror the PWA's JSON exactly and are tested to round-trip the fixture. They are never used by the app or stored.
-- **The importer** converts a `PWABackup` into native models. It is tested against `Fixtures/pwa-backup.json`: every match, event and panel converts, and each match's score is the same before and after.
-- The app's own export uses **its own versioned format** of the native model. It does not write PWA files.
-- Live sharing writes the PWA's **live-score snapshot**, not a `PWAMatch`: the flat object built by `buildLivePayload()` in the PWA's `script.js` (team names, totals, goals/points per team, period, clock fields, last score). A native → snapshot conversion exists for that feature only.
+- **The importer** converts a `PWABackup` into native models. It is tested against `Fixtures/pwa-backup.json`: every match, event and panel converts, and each match's score is the same before and after. Matches whose `legacyID` already exists are skipped, so running it twice is harmless. No conflict resolution.
+- The app never writes PWA files. The one PWA-shaped output is live sharing: it writes the PWA's **live-score snapshot** - the flat object built by `buildLivePayload()` in the PWA's `script.js` (team names, totals, goals/points per team, period, clock fields, last score) - so `live.html` keeps working.
 
 Traps in the PWA format, all handled in `PWA/` and nowhere else:
 - `MatchPeriod` raw values are display strings (`"1st Half"`, `"Half Time"`, ...); other enums are camelCase (`foulConceded`, `twoPointer`, `ladiesFootball`). The shared enums in `MatchCore` keep these raw values, which is harmless.
@@ -89,18 +95,16 @@ These are rules of the sport and lessons from real bugs - keep them whatever the
 - A panel has **exactly 30 fixed slots**; the slot is the jersey number. Empty slots are kept; panels are never sorted or compacted. Legacy panels (just `{id, name}`) are normalised into slots 1..N in stored order.
 - Panel import into a team is allowed only before throw-in, overwrites names in place and **never regenerates player ids** (events reference them).
 
-**Backup and import**
-- Only a **completed** export records the last-backup time; a cancelled share sheet records nothing.
-- Export shares the file only (no title or text), so "Save to Files" saves exactly one file.
-- Import is two-phase: a pure analysis (no writes) then an apply. Incoming records are **new** (import), **identical** (skip silently) or **conflicting** (same id, different content). Records are matched by `legacyID` for PWA backups and by `id` for the app's own backups.
-- Each conflict defaults to keeping the device copy; the destructive choice is never a fallback. Choosing the backup replaces the whole match - never an event-level merge. Cancelling writes nothing at all.
+**Data safety**
+- iCloud sync is not a backup: deleting a match on one device deletes it everywhere. Deleting a match always needs a confirmation.
+- If an export to Files is added later, only a **completed** export counts as a backup (a cancelled share sheet records nothing), and it shares the file only - no title or text - so "Save to Files" saves exactly one file.
 
 ## Design principles (UI)
 
 The app is used one-handed, on a sideline, often in rain or sun, while watching the game. Design for that rather than copying the PWA's screens:
 
 - **Fewest taps per event.** The most common actions (score, wide, card, substitution) are reachable from the match screen.
-- **Undo, not confirmations.** Record immediately and offer undo ("Point - No.11 · Undo") instead of confirm dialogs. Keep confirmations only for destructive, hard-to-undo actions (deleting a match, replacing data on import).
+- **Undo, not confirmations.** Record immediately and offer undo ("Point - No.11 · Undo") instead of confirm dialogs. Keep confirmations only for destructive, hard-to-undo actions (deleting a match).
 - **Big targets, high contrast**, readable in sunlight; nothing important behind a small icon.
 - **Native iOS patterns**: sheets, swipe actions, context menus, haptics, Live Activity - not web-style modals with Cancel/Done bars everywhere.
 - Port the PWA's **tasks** (record a score, make a substitution, end a period), not its layouts.

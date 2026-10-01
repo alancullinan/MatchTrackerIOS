@@ -8,10 +8,11 @@ Rebuild the MatchTracker PWA as a native SwiftUI iOS app. The PWA defines what t
 | --- | --- |
 | Approach | Native SwiftUI rewrite (not a web-view wrapper) |
 | Minimum iOS | 17 |
-| Persistence | SwiftData, single store |
+| Persistence | SwiftData, synced to each user's private iCloud database (CloudKit) |
 | Domain logic | `MatchCore` local Swift package, Foundation only |
-| Data model | Native Swift model; PWA format only inside an importer |
-| Migration for existing users | Import the PWA's JSON backup (one-way; the app exports its own format) |
+| Data model | Native Swift model; PWA format only inside a one-time importer |
+| Migrating PWA data | One-time import of the owner's PWA backup (the only PWA user) |
+| Sharing a match | Later. Approach undecided: CloudKit sharing, or a read-only link like live sharing |
 | Live sharing | Keep Firebase, compatible with the PWA's `live.html` viewer |
 | v1 extras | Live Activity, haptics, keep screen awake |
 | Two-pointers | Football and Ladies Football |
@@ -35,6 +36,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] Clone the repo on the Mac and create the Xcode project **inside the cloned folder**: iOS App, SwiftUI, SwiftData, product name `MatchTracker`. Untick "Create Git repository" - the folder already is one
 - [x] Add a local Swift package `MatchCore` at the repo root (File > New > Package) and link it to the app target
 - [x] Export a few real matches from the PWA into `MatchCore/Tests/MatchCoreTests/Fixtures/`
+- [ ] Turn on iCloud in Xcode: MatchTracker target > Signing & Capabilities > **+ Capability > iCloud**, tick **CloudKit**, add container `iCloud.com.alancullinan.MatchTracker`; then **+ Capability > Background Modes**, tick **Remote notifications** (needs the paid developer account)
 
 ## Phase 1: Domain (`MatchCore`)
 
@@ -42,18 +44,16 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] PWA backup types that round-trip the fixture (string-or-number ids, nulls, unknown keys)
 - [x] Move the PWA types into `Sources/MatchCore/PWA/` and rename them `PWABackup`, `PWAMatch`, `PWATeam`, `PWAPlayer`, `PWAEvent`, `PWAPanel`, `PWAPanelPlayer`; keep their round-trip tests passing
 - [ ] Native model in `Sources/MatchCore/Model/`: `Match`, `Team`, `Player`, `MatchEvent` (+ `kind` enum), `MatchClock`, `PlayerPanel`, typed IDs (see `CLAUDE.md`)
-- [ ] PWA importer: `PWABackup` -> native model, tested against the fixture (all 71 matches and 6 panels convert; every match's score is unchanged)
+- [ ] One-time PWA importer: `PWABackup` -> native model, tested against the fixture (all 71 matches and 6 panels convert; every match's score is unchanged; re-running skips matches already imported)
 - [ ] Score calculation per match type
 - [ ] Period state machine, playing periods, automatic period-end events
 - [ ] Event sorting by period, then time
 - [ ] Panels: 30 fixed slots; legacy panels normalised
-- [ ] Import analysis: new / identical / conflicting
 - [ ] Stats: shooting accuracy, scorers
-- [ ] The app's own backup format (versioned JSON of the native model)
 
 ## Phase 2: Core tracking (MVP)
 
-- [ ] SwiftData models and mapping to/from `MatchCore`
+- [ ] SwiftData models (CloudKit-compatible, see `CLAUDE.md`) and mapping to/from `MatchCore`; iCloud sync on
 - [ ] Home and match list with filter
 - [ ] Match create/edit form
 - [ ] Match details: scoreboard, wall-clock timer, period transitions
@@ -72,9 +72,9 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 ## Phase 4: Data
 
-- [ ] Export the app's own backup format via `fileExporter` / `ShareLink`, file only
-- [ ] Import a PWA backup or the app's own backup, with conflict-resolution screen
-- [ ] Last-backup indicator
+- [ ] Import the owner's PWA backup (a hidden or one-off screen is fine)
+- [ ] iCloud sync status in Settings (signed out / syncing / up to date)
+- [ ] Optional: export everything to Files as a backup
 
 ## Phase 5: Sharing and stats
 
@@ -86,10 +86,14 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 - [ ] Live Activity and Dynamic Island (score, period, running clock)
 - [ ] Haptics on score entry; keep screen awake during a live match
-- [ ] v1.1: iCloud sync (CloudKit), widgets, Apple Watch app, App Intents / Siri, iPad layout
+- [ ] v1.1: widgets, Apple Watch app, App Intents / Siri, iPad layout
 
 ## Phase 7: Release
 
 - [ ] TestFlight, tried at a real match
 - [ ] App Store listing, screenshots, privacy manifest (disclose the Firebase share link)
 - [ ] Decide the PWA's future; keep its export format stable while both exist
+
+## Later ideas
+
+- [ ] Share a match with someone else (read-only first)
