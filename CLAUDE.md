@@ -8,6 +8,8 @@ MatchTracker for iOS: a native SwiftUI app for tracking Gaelic games matches (Fo
 
 It is a rewrite of the PWA at [`alancullinan/matchtrackerpwa`](https://github.com/alancullinan/matchtrackerpwa) (live at matchtracker.club). **The PWA is the specification**: when behaviour is unclear, read its `script.js` and match it unless this file or `PLAN.md` says otherwise.
 
+Other MatchTracker repos exist (`MatchTracker`, the original 2025 Swift app, and `MatchTrackerV2`, an earlier rebuild). **Do not use them as a reference or copy from them** - the PWA is the only spec.
+
 `PLAN.md` holds the phased plan and checklists. Tick items off there as work lands.
 
 ## How we work
