@@ -64,7 +64,7 @@ Traps in that format:
 ## Behaviour that must carry over from the PWA
 
 **Match logic**
-- Scoring: goal = 3, point = 1, two-pointer = 2. Two-pointers exist for Football and Ladies Football, not Hurling or Camogie (confirmed by the owner). The PWA's `updateTwoPointerButtons()` hides the button for Ladies Football - that is a PWA bug, not behaviour to copy.
+- Scoring: goal = 3, point = 1, two-pointer = 2. Two-pointers exist for Football and Ladies Football, not Hurling or Camogie (confirmed by the owner). In the PWA a two-pointer is recorded by tapping Point, then choosing "2 Pointer" in the score modal's Score Type toggle.
 - Events can be recorded only in playing periods: 1st Half, 2nd Half, Extra Time 1st Half, Extra Time 2nd Half.
 - Ending a period that leads into Half Time, Full Time, Extra Time Half Time or Match Over creates a `periodEnd` event automatically. Its `period` is the period being **entered**; its `timeElapsed` is the time of the period just ended.
 - Events sort by period order, then `timeElapsed`; newest first in the event list, oldest first for exports and sharing. Sorting must stay correct after time or period edits.
