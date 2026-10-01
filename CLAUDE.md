@@ -43,7 +43,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 - Plain `Codable`, `Sendable`, value-type models. The app target maps them to SwiftData; nothing in `MatchCore` knows about storage.
 - **The native model is designed for Swift, not copied from the PWA's JSON.** Make invalid states unrepresentable:
   - `MatchEvent` holds the shared fields (id, period, time, note) plus a `kind` enum with one case per event type, each carrying only its own data (a shot has an outcome and shot type; a card has a card type). No bag of optional fields.
-  - IDs are app-generated (`UUID`), wrapped in small typed IDs. Imported PWA ids are kept only as `legacyID` so re-importing the same backup is recognised.
+  - IDs are `UUID`s, wrapped in small typed IDs. New records get random UUIDs. Imported PWA records get a UUID **derived deterministically from the PWA id** (name-based), and keep that id as `legacyID`, so importing the same backup twice produces identical records.
   - Teams are referenced by side (`.team1` / `.team2`), not by a team-id string.
   - An unnamed player has `name == nil`; never a `No.N` placeholder.
   - A period-end event records the period that **ended** (e.g. `.firstHalf`).
@@ -63,6 +63,7 @@ Users move from the PWA by exporting a backup there and importing it here. Every
 - **`PWA*` types** (`PWABackup`, `PWAMatch`, `PWAEvent`, ...) mirror the PWA's JSON exactly and are tested to round-trip the fixture. They are never used by the app or stored.
 - **The importer** converts a `PWABackup` into native models. It is tested against `Fixtures/pwa-backup.json`: every match, event and panel converts, and each match's score is the same before and after.
 - The app's own export uses **its own versioned format** of the native model. It does not write PWA files.
+- The one exception is live sharing: the Firebase viewer (`live.html`) reads the PWA's match shape, so a native → `PWAMatch` conversion exists for that feature only.
 
 Traps in the PWA format, all handled in `PWA/` and nowhere else:
 - `MatchPeriod` raw values are display strings (`"1st Half"`, `"Half Time"`, ...); other enums are camelCase (`foulConceded`, `twoPointer`, `ladiesFootball`). The shared enums in `MatchCore` keep these raw values, which is harmless.
@@ -79,7 +80,7 @@ These are rules of the sport and lessons from real bugs - keep them whatever the
 **Match logic**
 - Scoring: goal = 3, point = 1, two-pointer = 2. Two-pointers exist for Football and Ladies Football, not Hurling or Camogie (confirmed by the owner). In the PWA a two-pointer is recorded by tapping Point, then choosing "2 Pointer" in the score modal's Score Type toggle.
 - Events can be recorded only in playing periods: 1st Half, 2nd Half, Extra Time 1st Half, Extra Time 2nd Half.
-- Ending a playing period automatically records a period-end event with the time and score at that moment.
+- Ending a playing period automatically records a period-end event with the period that ended and its time. The score at that point is derived from the earlier events, never stored, so it stays correct after edits.
 - Events sort by period order, then `timeElapsed`; newest first in the event list, oldest first for exports and sharing. Sorting must stay correct after time or period edits.
 - The timer is **wall-clock based**: running time = now − `periodStartTimestamp`, never a tick counter. This is what lets a Live Activity show a clock without the app running.
 
@@ -91,7 +92,7 @@ These are rules of the sport and lessons from real bugs - keep them whatever the
 **Backup and import**
 - Only a **completed** export records the last-backup time; a cancelled share sheet records nothing.
 - Export shares the file only (no title or text), so "Save to Files" saves exactly one file.
-- Import is two-phase: a pure analysis (no writes) then an apply. Incoming records are **new** (import), **identical** (skip silently) or **conflicting** (same id, different content).
+- Import is two-phase: a pure analysis (no writes) then an apply. Incoming records are **new** (import), **identical** (skip silently) or **conflicting** (same id, different content). Records are matched by `legacyID` for PWA backups and by `id` for the app's own backups.
 - Each conflict defaults to keeping the device copy; the destructive choice is never a fallback. Choosing the backup replaces the whole match - never an event-level merge. Cancelling writes nothing at all.
 
 ## Design principles (UI)
