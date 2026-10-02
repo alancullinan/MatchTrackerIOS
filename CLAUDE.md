@@ -21,7 +21,15 @@ Other MatchTracker repos exist (`MatchTracker`, the original 2025 Swift app, and
 - Tick the item in `PLAN.md` in the same PR, and record any decision or deviation in `CLAUDE.md` or `PLAN.md`.
 - Never include an AI model name in commits, PRs or code comments.
 
+### Building and checking the app (on the Mac)
+- **Build and test the app yourself; never ask the owner to paste build output, errors or logs.** Read them directly.
+- With Xcode's MCP server connected (`/mcp` lists `xcode`), use its tools to build, run tests, render Previews and drive the Simulator.
+- Otherwise use the command line. Find an installed simulator with `xcrun simctl list devices available iPhone` (don't assume a model exists), then:
+  `xcodebuild test -project MatchTracker/MatchTracker.xcodeproj -scheme MatchTracker -destination 'platform=iOS Simulator,name=<that iPhone>'`
+- Loop until it builds and the tests pass, then check UI changes in Previews or the Simulator before opening a PR.
+
 ### One-off setup on the Mac
+- **Point the command line at Xcode 27**: `sudo xcode-select -s /Applications/Xcode.app` (check with `xcode-select -p`). Otherwise Terminal's `swift` is the Command Line Tools' older Swift, and `swift test` fails with "no such module 'Testing'". Other Xcode copies on the Mac (e.g. `Xcode New.app`, Swift 6.2) are not the project's toolchain.
 - **Xcode's MCP server**, so Claude Code can build, run tests, render Previews and use the Simulator itself: in Xcode open Settings → Intelligence and turn on **Xcode Tools**; then, in Terminal, `claude mcp add --transport stdio xcode -- xcrun mcpbridge` (check with `claude mcp list`). Xcode must be running with the project open. With it, check UI work in Previews or the Simulator before opening a PR.
 - **SwiftUI Pro skill** (optional, recommended): Paul Hudson's agent skill for current SwiftUI APIs, navigation, state and accessibility. In Claude Code: `/plugin marketplace add twostraws/SwiftUI-Agent-Skill`, then `/plugin install swiftui-pro@swiftui-agent-skill`.
 
@@ -188,4 +196,4 @@ The agreed design, tried as a clickable mockup: https://claude.ai/artifact/VpABc
   ln -sf /opt/swift-6.4.0-RELEASE-ubuntu24.04/usr/bin/* /usr/local/bin/
   ```
 - CI (`.github/workflows/ci.yml`) runs on every PR and push to `main`: `matchcore-linux` runs `swift test` in the `swift:6.4` container; `app-macos` runs `swift test`, then `xcodebuild test` (the app's `MatchTrackerTests`) on an available iPhone simulator. The `MatchTracker` scheme is shared (`xcshareddata/`) so CI can see it; keep it committed.
-- App: build and test from Xcode (⌘U), or `xcodebuild test -project MatchTracker/MatchTracker.xcodeproj -scheme MatchTracker -destination 'platform=iOS Simulator,name=iPhone 17'`.
+- App: build and test from Xcode (⌘U), or `xcodebuild test -project MatchTracker/MatchTracker.xcodeproj -scheme MatchTracker -destination 'platform=iOS Simulator,name=<iPhone>'`, where `<iPhone>` is one listed by `xcrun simctl list devices available iPhone`.
