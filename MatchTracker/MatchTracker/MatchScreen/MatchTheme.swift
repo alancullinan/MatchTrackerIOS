@@ -1,3 +1,4 @@
+import MatchCore
 import SwiftUI
 import UIKit
 
@@ -15,6 +16,15 @@ enum MatchTheme {
     static let flagDisc = Color(light: 0x10241A, dark: 0x10241A)
     static let muted = Color(light: 0x4C6354, dark: 0xA9BCAE)
     static let live = Color(light: 0xC62A1D, dark: 0xFF6B5E)
+
+    /// A referee's card.
+    static func card(_ card: CardType) -> Color {
+        switch card {
+        case .yellow: Color(light: 0xF2C200, dark: 0xF5CB1A)
+        case .black: Color(light: 0x161616, dark: 0x161616)
+        case .red: Color(light: 0xD32418, dark: 0xE8382B)
+        }
+    }
 
     /// Condensed scoreboard lettering for the clock, scores and labels.
     static func display(_ size: CGFloat, _ weight: Font.Weight = .semibold) -> Font {

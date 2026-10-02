@@ -3,25 +3,36 @@ import MatchCore
 /// How an event is described in a line of text, e.g. on the match screen's
 /// last-event card. Kept out of the view so it can be tested.
 enum EventText {
-    /// "Point · Na Fianna · No. 11 Seán Ryan", "End of 1st Half".
+    /// "Point · Na Fianna · No. 11 Seán Ryan", "End of 1st Half". A note
+    /// shows its text.
     static func title(_ event: MatchEvent, in match: Match) -> String {
         var parts: [String]
         switch event.kind {
         case .shot(_, _, let outcome, _): parts = [outcome.displayName]
-        case .foul: parts = ["Foul"]
+        case .foul(_, _, let outcome, let card): parts = [foulName(outcome, card: card)]
         case .card(_, _, let card): parts = [cardName(card)]
         case .kickout(_, _, let won): parts = [won ? "Kickout won" : "Kickout lost"]
         case .substitution: parts = ["Substitution"]
-        case .note: parts = ["Note"]
+        case .note: parts = [event.note ?? "Note"]
         case .periodEnd: return "End of \(event.period.displayName)"
         }
         if let side = event.side {
             parts.append(teamName(match[side]))
         }
-        if let player = player(of: event, in: match) {
-            parts.append(playerName(player))
+        if let players = players(of: event, in: match) {
+            parts.append(players)
         }
         return parts.joined(separator: " · ")
+    }
+
+    /// "Foul", "Penalty conceded", "Foul, black card".
+    static func foulName(_ outcome: FoulOutcome, card: CardType?) -> String {
+        let name = outcome == .penalty ? "Penalty conceded" : "Foul"
+        return card.map { "\(name), \(cardName($0).lowercased())" } ?? name
+    }
+
+    static func cardName(_ card: CardType) -> String {
+        "\(card.displayName) card"
     }
 
     /// "2nd Half · 23' · 1-05 v 0-03": when, and the score straight after it.
@@ -52,25 +63,23 @@ enum EventText {
         team.name.isEmpty ? "Unnamed team" : team.name
     }
 
-    private static func player(of event: MatchEvent, in match: Match) -> Player? {
+    /// The player an event names, or for a substitution "No. 18 on for No. 11".
+    private static func players(of event: MatchEvent, in match: Match) -> String? {
         guard let side = event.side else { return nil }
-        let id: PlayerID?
+        let team = match[side]
+        func name(_ id: PlayerID?) -> String? { id.flatMap(team.player).map(playerName) }
         switch event.kind {
         case .shot(_, let player, _, _), .foul(_, let player, _, _), .card(_, let player, _), .kickout(_, let player, _):
-            id = player
-        case .substitution(_, _, let on):
-            id = on
+            return name(player)
+        case .substitution(_, let off, let on):
+            switch (name(off), name(on)) {
+            case let (off?, on?): return "\(on) on for \(off)"
+            case let (off?, nil): return "\(off) off"
+            case let (nil, on?): return "\(on) on"
+            case (nil, nil): return nil
+            }
         case .note, .periodEnd:
-            id = nil
-        }
-        return id.flatMap { match[side].player($0) }
-    }
-
-    private static func cardName(_ card: CardType) -> String {
-        switch card {
-        case .yellow: "Yellow card"
-        case .red: "Red card"
-        case .black: "Black card"
+            return nil
         }
     }
 }

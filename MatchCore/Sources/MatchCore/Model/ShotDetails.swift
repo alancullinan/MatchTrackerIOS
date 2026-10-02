@@ -64,10 +64,7 @@ extension Match {
               player.map({ self[side].player($0) != nil }) ?? true
         else { return false }
         events[index].kind = .shot(side: side, player: player, outcome: outcome, type: type)
-        events[index].note = note.flatMap { text in
-            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            return trimmed.isEmpty ? nil : trimmed
-        }
+        events[index].note = MatchEvent.cleanNote(note)
         return true
     }
 

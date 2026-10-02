@@ -17,6 +17,13 @@ final class MatchSession {
         case score(TeamSide, ShotOutcome)
         /// A wide; the scorer sheet then offers saved, short or post instead.
         case miss(TeamSide)
+        /// A free conceded by the team; the sheet adds a penalty or a card.
+        case foul(TeamSide)
+        /// The team's kickout, as won; the sheet offers lost instead.
+        case kickout(TeamSide)
+        case substitution(TeamSide)
+        /// A note for a team, or for the match with `nil`. Its text comes from the sheet.
+        case note(TeamSide?)
     }
 
     /// The change that Undo would reverse.
@@ -30,8 +37,9 @@ final class MatchSession {
     private(set) var undoable: Undoable?
     /// Goes up with every change, to trigger haptics.
     private(set) var changeCount = 0
-    /// The shot whose details the scorer sheet is showing, if it is open.
-    var scorerSheetEvent: EventID?
+    /// The event whose details sheet is open: the scorer sheet for a shot, or
+    /// the sheet for a foul, kickout, substitution or note.
+    var detailsEvent: EventID?
     var saveError: String?
 
     private let context: ModelContext
@@ -63,34 +71,78 @@ final class MatchSession {
         case .resume:
             applied = changed.clock.period.isPlaying && changed.start(at: now)
         case .score(let side, let outcome):
-            let event = changed.record(.shot(side: side, player: nil, outcome: outcome, type: .fromPlay), at: now)
-            applied = event != nil
-            newUndoable = event.map { .event($0.id) }
+            newUndoable = record(.shot(side: side, player: nil, outcome: outcome, type: .fromPlay), in: &changed, at: now)
+            applied = newUndoable != nil
         case .miss(let side):
-            let event = changed.record(.shot(side: side, player: nil, outcome: .wide, type: .fromPlay), at: now)
-            applied = event != nil
-            newUndoable = event.map { .event($0.id) }
+            newUndoable = record(.shot(side: side, player: nil, outcome: .wide, type: .fromPlay), in: &changed, at: now)
+            applied = newUndoable != nil
+        case .foul(let side):
+            newUndoable = record(.foul(side: side, player: nil, outcome: .free, card: nil), in: &changed, at: now)
+            applied = newUndoable != nil
+        case .kickout(let side):
+            newUndoable = record(.kickout(side: side, player: nil, won: true), in: &changed, at: now)
+            applied = newUndoable != nil
+        case .substitution(let side):
+            newUndoable = record(.substitution(side: side, off: nil, on: nil), in: &changed, at: now)
+            applied = newUndoable != nil
+        case .note(let side):
+            newUndoable = record(.note(side: side), in: &changed, at: now)
+            applied = newUndoable != nil
         }
 
         guard applied, save(changed) else { return false }
         if action != .pause && action != .resume { undoable = newUndoable }
-        // The tap has counted the shot; now ask for its details. A miss always
-        // asks (wide, saved, short or post); a score only if the team asks for scorers.
+        // The tap has counted the event; now ask for its details. Everything
+        // but a period end asks; a score only if the team asks for scorers.
         if case .event(let id) = newUndoable {
             switch action {
-            case .score(let side, _) where match[side].asksForScorers: scorerSheetEvent = id
-            case .miss: scorerSheetEvent = id
-            default: break
+            case .score(let side, _): if match[side].asksForScorers { detailsEvent = id }
+            case .nextStep, .pause, .resume: break
+            case .miss, .foul, .kickout, .substitution, .note: detailsEvent = id
             }
         }
         return true
     }
 
+    private func record(_ kind: MatchEvent.Kind, in match: inout Match, at now: Date) -> Undoable? {
+        match.record(kind, at: now).map { .event($0.id) }
+    }
+
     /// Saves the details picked on the scorer sheet. See `Match.updateShot`.
     @discardableResult
     func updateShot(_ id: EventID, outcome: ShotOutcome, type: ShotType, player: PlayerID?, note: String?) -> Bool {
+        update { $0.updateShot(id, outcome: outcome, type: type, player: player, note: note) }
+    }
+
+    /// Saves the details picked on the foul sheet. See `Match.updateFoul`.
+    @discardableResult
+    func updateFoul(_ id: EventID, outcome: FoulOutcome, card: CardType?, player: PlayerID?, note: String?) -> Bool {
+        update { $0.updateFoul(id, outcome: outcome, card: card, player: player, note: note) }
+    }
+
+    /// Saves the details picked on the kickout sheet. See `Match.updateKickout`.
+    @discardableResult
+    func updateKickout(_ id: EventID, won: Bool, player: PlayerID?, note: String?) -> Bool {
+        update { $0.updateKickout(id, won: won, player: player, note: note) }
+    }
+
+    /// Saves the players picked on the substitution sheet. See `Match.updateSubstitution`.
+    @discardableResult
+    func updateSubstitution(_ id: EventID, off: PlayerID?, on: PlayerID?, note: String?) -> Bool {
+        update { $0.updateSubstitution(id, off: off, on: on, note: note) }
+    }
+
+    /// Saves a note's text, or deletes the note if the text is blank: a note
+    /// with no text says nothing.
+    @discardableResult
+    func saveNote(_ id: EventID, text: String) -> Bool {
+        if text.allSatisfy(\.isWhitespace) { return deleteEvent(id) }
+        return update { $0.updateNote(id, text: text) }
+    }
+
+    private func update(_ change: (inout Match) -> Bool) -> Bool {
         var changed = match
-        guard changed.updateShot(id, outcome: outcome, type: type, player: player, note: note) else { return false }
+        guard change(&changed) else { return false }
         return save(changed)
     }
 
