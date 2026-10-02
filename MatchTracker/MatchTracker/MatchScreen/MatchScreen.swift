@@ -11,24 +11,27 @@ struct MatchScreenDestination: View {
     @State private var unreadable = false
 
     var body: some View {
-        Group {
-            if let session {
-                MatchScreen(session: session)
-            } else if unreadable {
-                ContentUnavailableView(
-                    "This Match Can't Be Read",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text("It may have been saved by a newer version of the app. Nothing has been changed.")
-                )
-            }
+        if let session {
+            MatchScreen(session: session)
+        } else if unreadable {
+            ContentUnavailableView(
+                "This Match Can't Be Read",
+                systemImage: "exclamationmark.triangle",
+                description: Text("It may have been saved by a newer version of the app. Nothing has been changed.")
+            )
+        } else {
+            // A real view while loading: a task on an empty view never runs.
+            PitchBackground()
+                .task { load() }
         }
-        .task {
-            guard session == nil else { return }
-            if let match = try? stored.match() {
-                session = MatchSession(match: match, context: context)
-            } else {
-                unreadable = true
-            }
+    }
+
+    private func load() {
+        guard session == nil else { return }
+        if let match = try? stored.match() {
+            session = MatchSession(match: match, context: context)
+        } else {
+            unreadable = true
         }
     }
 }
@@ -156,6 +159,12 @@ struct MatchScreen: View {
 }
 
 #if DEBUG
+#Preview("Opened from the list") {
+    // Goes through MatchScreenDestination, as tapping a match in the list does.
+    NavigationStack { MatchScreenDestination(stored: MatchSession.previewStored(.secondHalf)) }
+        .modelContainer(MatchSession.previewContainer)
+}
+
 #Preview("2nd half, running") {
     NavigationStack { MatchScreen(session: .preview(.secondHalf)) }
 }
@@ -174,7 +183,7 @@ struct MatchScreen: View {
 
 extension MatchSession {
     /// The previews' own in-memory store, kept for as long as the previews run.
-    private static let previewContainer = try! Store.container(inMemory: true)
+    static let previewContainer = try! Store.container(inMemory: true)
 
     /// A session on a sample match in `state`, saved in an in-memory store.
     static func preview(_ state: SampleMatches.ScreenState) -> MatchSession {
@@ -182,6 +191,11 @@ extension MatchSession {
         let context = previewContainer.mainContext
         try? context.store(match)
         return MatchSession(match: match, context: context)
+    }
+
+    /// A sample match in `state`, stored in the previews' in-memory store.
+    static func previewStored(_ state: SampleMatches.ScreenState) -> StoredMatch {
+        try! previewContainer.mainContext.store(SampleMatches.screen(state))
     }
 }
 #endif
