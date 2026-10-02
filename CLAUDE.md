@@ -27,6 +27,7 @@ Other MatchTracker repos exist (`MatchTracker`, the original 2025 Swift app, and
 - Otherwise use the command line. Find an installed simulator with `xcrun simctl list devices available iPhone` (don't assume a model exists), then:
   `xcodebuild test -project MatchTracker/MatchTracker.xcodeproj -scheme MatchTracker -destination 'platform=iOS Simulator,name=<that iPhone>'`
 - Loop until it builds and the tests pass, then check UI changes in Previews or the Simulator before opening a PR.
+- **Previews:** render one at a time (parallel renders fail). If a render fails with "Library not loaded: /usr/lib/libSystem.B.dylib", the Preview simulator is wedged, not the code: run `xcrun simctl --set previews shutdown all` and render again. In a Preview, don't create an object (e.g. a `MatchSession`) in `onAppear`; it crashed the Preview runtime. Build it with a static `preview(...)` helper instead.
 
 ### One-off setup on the Mac
 - **Point the command line at Xcode 27**: `sudo xcode-select -s /Applications/Xcode.app` (check with `xcode-select -p`). Otherwise Terminal's `swift` is the Command Line Tools' older Swift, and `swift test` fails with "no such module 'Testing'". Other Xcode copies on the Mac (e.g. `Xcode New.app`, Swift 6.2) are not the project's toolchain.
@@ -41,6 +42,7 @@ MatchTracker/                   Xcode project folder
   MatchTracker/                 iOS app target sources (SwiftUI, SwiftData)
     Storage/                    SwiftData records (StoredMatch, StoredPanel) and the store
     Matches/                    the match list (the home screen), its rows, and sample matches for Previews
+    MatchScreen/                the match screen: `MatchSession` (applies, saves and undoes changes), theme, parts, `EventText`
     Teams/                      team colour badge and picker (`KitColor.color` lives here, not in MatchCore)
   MatchTrackerTests/            app tests (Swift Testing), run by CI
 MatchCore/                      local Swift package - the domain layer (linked as ../MatchCore)
@@ -68,6 +70,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | `MatchEvent.swift` | `MatchEvent` and its `Kind` (shot, foul, card, kickout, substitution, note, periodEnd); `side` and `type` |
 | `MatchClock.swift` | Wall-clock timer: `elapsed(at:)`, `start(at:)`, `pause(at:)` |
 | `MatchPeriods.swift` | `isPlaying`, `displayName`, `match.start/pause/endPeriod(at:)`, `match.record(_:note:at:)`, `canRecordEvents`, `nextPlayingPeriod` |
+| `MatchSteps.swift` | `MatchStep` and `nextStep` / `takeNextStep(at:)` (the main button), `undoLastEvent()`, `undoPeriodStart()`, `lastPeriodEnd`, `MatchClock.text(seconds:)`, `MatchEvent.minute` |
 | `EventOrder.swift` | `eventsInOrder`, `eventsNewestFirst`, `score(_:through:)` (score at any event) |
 | `Score.swift` | `Score` (goals, points, two-pointers, total, "1-05"), `match.score(_:)`, `MatchType.allowsTwoPointers` |
 | `Stats.swift` | `match.stats(_:)` → `TeamStats`: shooting, per-player stats with score by shot type, fouls, cards, substitutions |

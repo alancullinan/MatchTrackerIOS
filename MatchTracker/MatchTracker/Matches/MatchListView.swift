@@ -21,7 +21,7 @@ struct MatchListView: View {
         NavigationStack {
             List(shownMatches) { stored in
                 NavigationLink {
-                    MatchDetailsPlaceholder()
+                    MatchScreenDestination(stored: stored)
                 } label: {
                     MatchRow(stored: stored)
                 }
@@ -106,17 +106,6 @@ struct MatchListView: View {
             deleteError = error.localizedDescription
         }
         matchToDelete = nil
-    }
-}
-
-/// Where tapping a match leads until the match details screen is built.
-private struct MatchDetailsPlaceholder: View {
-    var body: some View {
-        ContentUnavailableView(
-            "Match Details",
-            systemImage: "stopwatch",
-            description: Text("Live tracking comes in the next update.")
-        )
     }
 }
 
