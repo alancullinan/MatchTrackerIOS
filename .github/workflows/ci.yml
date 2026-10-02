@@ -30,11 +30,13 @@ jobs:
       - name: Test MatchCore
         working-directory: MatchCore
         run: swift test
-      # The app has no test target yet; switch this to `xcodebuild test` once it does.
-      - name: Build app
-        run: >
-          xcodebuild build
-          -project MatchTracker/MatchTracker.xcodeproj
-          -scheme MatchTracker
-          -destination 'generic/platform=iOS Simulator'
-          CODE_SIGNING_ALLOWED=NO
+      # Runs the app's tests (MatchTrackerTests) on whichever iPhone simulator the runner has.
+      - name: Test app
+        run: |
+          DEVICE=$(xcrun simctl list devices available iPhone | grep -m1 -oE 'iPhone [^(]+' | sed 's/ *$//')
+          echo "Using $DEVICE"
+          xcodebuild test \
+            -project MatchTracker/MatchTracker.xcodeproj \
+            -scheme MatchTracker \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
+            CODE_SIGNING_ALLOWED=NO

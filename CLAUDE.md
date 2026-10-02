@@ -27,6 +27,8 @@ Other MatchTracker repos exist (`MatchTracker`, the original 2025 Swift app, and
 MatchTracker/                   Xcode project folder
   MatchTracker.xcodeproj        open this in Xcode
   MatchTracker/                 iOS app target sources (SwiftUI, SwiftData)
+    Storage/                    SwiftData records (StoredMatch, StoredPanel) and the store
+  MatchTrackerTests/            app tests (Swift Testing), run by CI
 MatchCore/                      local Swift package - the domain layer (linked as ../MatchCore)
   Package.swift
   Sources/MatchCore/
@@ -91,6 +93,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
   - every relationship is optional, and no `.deny` delete rules;
   - schema changes are additive only (add properties; never rename or remove one once shipped).
 - Each user's data lives in their own iCloud account; there is no shared server. Live score sharing, if added, sends only a snapshot of the score, never the match data.
+- **Storage (`MatchTracker/Storage/`)**: `StoredMatch` and `StoredPanel` are only how MatchCore values are saved; views and logic work with `Match` and `PlayerPanel`. Write with `context.store(match)` (updates the record with that id, or inserts one - ids are kept unique here, not by the schema) and read with `stored.match()`. Scalar fields are columns; rosters, events and panel slots are encoded with `StoredCoding` (JSON, sorted keys). This makes the `Codable` shape of `Player`, `MatchEvent` (including `Kind`'s case and label names) and `PanelSlot` a stored format: change it only additively, like the enums. Reading never guesses: an unknown case name or unreadable JSON throws `StoredDataError`, and nothing is overwritten with a default.
 - Keep a match **self-contained** (its teams, players and events belong to it) so a single match can be shared later. How is undecided - see `PLAN.md`.
 - Never delete data that has not been verified - e.g. a migration writes, reads back and compares before removing anything.
 
@@ -146,5 +149,5 @@ The app is used one-handed, on a sideline, often in rain or sun, while watching 
   cd /opt && curl -fsSL https://download.swift.org/swift-6.2-release/ubuntu2404/swift-6.2-RELEASE/swift-6.2-RELEASE-ubuntu24.04.tar.gz | tar xz
   ln -sf /opt/swift-6.2-RELEASE-ubuntu24.04/usr/bin/* /usr/local/bin/
   ```
-- CI (`.github/workflows/ci.yml`) runs on every PR and push to `main`: `matchcore-linux` runs `swift test` in the `swift:6.2` container; `app-macos` runs `swift test` and builds the app for the Simulator. The app has no test target yet - when one is added, switch that step to `xcodebuild test`. The `MatchTracker` scheme is shared (`xcshareddata/`) so CI can see it; keep it committed.
+- CI (`.github/workflows/ci.yml`) runs on every PR and push to `main`: `matchcore-linux` runs `swift test` in the `swift:6.2` container; `app-macos` runs `swift test`, then `xcodebuild test` (the app's `MatchTrackerTests`) on an available iPhone simulator. The `MatchTracker` scheme is shared (`xcshareddata/`) so CI can see it; keep it committed.
 - App: build and test from Xcode (⌘U), or `xcodebuild test -project MatchTracker/MatchTracker.xcodeproj -scheme MatchTracker -destination 'platform=iOS Simulator,name=iPhone 17'`.

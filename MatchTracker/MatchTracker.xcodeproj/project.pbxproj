@@ -12,17 +12,33 @@
 		E7FF18EB306EAC780031FA3F /* MatchCore in Frameworks */ = {isa = PBXBuildFile; productRef = E7FF18EA306EAC780031FA3F /* MatchCore */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		E7FF18F7306EB0000031FA3F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E7FF18CE306EA9FE0031FA3F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E7FF18D5306EA9FE0031FA3F;
+			remoteInfo = MatchTracker;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		E7FF18D6306EA9FE0031FA3F /* MatchTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MatchTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E7FF18E4306EAB2A0031FA3F /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = CLAUDE.md; path = ../CLAUDE.md; sourceTree = SOURCE_ROOT; };
 		E7FF18E5306EAB2A0031FA3F /* PLAN.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = PLAN.md; path = ../PLAN.md; sourceTree = SOURCE_ROOT; };
 		E7FF18E8306EAC300031FA3F /* MatchCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = MatchCore; path = ../MatchCore; sourceTree = SOURCE_ROOT; };
+		E7FF18F1306EB0000031FA3F /* MatchTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MatchTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E7FF18D8306EA9FE0031FA3F /* MatchTracker */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = MatchTracker;
+			sourceTree = "<group>";
+		};
+		E7FF18F2306EB0000031FA3F /* MatchTrackerTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MatchTrackerTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -36,6 +52,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E7FF18F3306EB0000031FA3F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -46,6 +69,7 @@
 				E7FF18E4306EAB2A0031FA3F /* CLAUDE.md */,
 				E7FF18E5306EAB2A0031FA3F /* PLAN.md */,
 				E7FF18D8306EA9FE0031FA3F /* MatchTracker */,
+				E7FF18F2306EB0000031FA3F /* MatchTrackerTests */,
 				E7FF18E9306EAC780031FA3F /* Frameworks */,
 				E7FF18D7306EA9FE0031FA3F /* Products */,
 			);
@@ -55,6 +79,7 @@
 			isa = PBXGroup;
 			children = (
 				E7FF18D6306EA9FE0031FA3F /* MatchTracker.app */,
+				E7FF18F1306EB0000031FA3F /* MatchTrackerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -92,6 +117,29 @@
 			productReference = E7FF18D6306EA9FE0031FA3F /* MatchTracker.app */;
 			productType = "com.apple.product-type.application";
 		};
+		E7FF18F0306EB0000031FA3F /* MatchTrackerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E7FF18F8306EB0000031FA3F /* Build configuration list for PBXNativeTarget "MatchTrackerTests" */;
+			buildPhases = (
+				E7FF18F4306EB0000031FA3F /* Sources */,
+				E7FF18F3306EB0000031FA3F /* Frameworks */,
+				E7FF18F5306EB0000031FA3F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E7FF18F6306EB0000031FA3F /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E7FF18F2306EB0000031FA3F /* MatchTrackerTests */,
+			);
+			name = MatchTrackerTests;
+			packageProductDependencies = (
+			);
+			productName = MatchTrackerTests;
+			productReference = E7FF18F1306EB0000031FA3F /* MatchTrackerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -104,6 +152,10 @@
 				TargetAttributes = {
 					E7FF18D5306EA9FE0031FA3F = {
 						CreatedOnToolsVersion = 26.3;
+					};
+					E7FF18F0306EB0000031FA3F = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = E7FF18D5306EA9FE0031FA3F;
 					};
 				};
 			};
@@ -122,6 +174,7 @@
 			projectRoot = "";
 			targets = (
 				E7FF18D5306EA9FE0031FA3F /* MatchTracker */,
+				E7FF18F0306EB0000031FA3F /* MatchTrackerTests */,
 			);
 		};
 /* End PBXProject section */
@@ -136,6 +189,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E7FF18F5306EB0000031FA3F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -146,7 +206,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E7FF18F4306EB0000031FA3F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E7FF18F6306EB0000031FA3F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E7FF18D5306EA9FE0031FA3F /* MatchTracker */;
+			targetProxy = E7FF18F7306EB0000031FA3F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		E7FF18DF306EAA000031FA3F /* Debug */ = {
@@ -353,6 +428,52 @@
 			};
 			name = Release;
 		};
+		E7FF18F9306EB0000031FA3F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CWRBMDAKV4;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alancullinan.MatchTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MatchTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MatchTracker";
+			};
+			name = Debug;
+		};
+		E7FF18FA306EB0000031FA3F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CWRBMDAKV4;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alancullinan.MatchTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MatchTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MatchTracker";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -370,6 +491,15 @@
 			buildConfigurations = (
 				E7FF18E2306EAA000031FA3F /* Debug */,
 				E7FF18E3306EAA000031FA3F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E7FF18F8306EB0000031FA3F /* Build configuration list for PBXNativeTarget "MatchTrackerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E7FF18F9306EB0000031FA3F /* Debug */,
+				E7FF18FA306EB0000031FA3F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

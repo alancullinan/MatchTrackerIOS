@@ -17,6 +17,7 @@ A native SwiftUI iOS app for tracking Gaelic games matches, succeeding the owner
 | Sharing a match | Later. Approach undecided: CloudKit sharing, or a read-only link like live sharing | Not needed yet; matches are kept self-contained so it stays possible |
 | Live sharing | Later. Approach undecided; the PWA's Firebase viewer (`live.html`) is one option, not a requirement | Not needed for v1; to be decided on its own merits rather than for PWA compatibility |
 | v1 extras | Live Activity, haptics, keep screen awake | The biggest gains on the sideline for little work: score and clock on the Lock Screen, confirmation without looking, and no screen locking mid-match. Widgets, Watch, Siri and iPad wait for v1.1 |
+| Event storage | Events (and rosters) are encoded as JSON on the match record; the match's own fields are SwiftData columns | A match is edited by one person at a time, so finer-grained sync merges buy little, while one model per event would mean many CloudKit records per match, relationship ordering to manage and a second shape for every event kind. Encoding reuses `MatchCore`'s `Codable`, so a stored event has exactly the shape of `MatchEvent.Kind` and invalid states stay unrepresentable. Columns keep the match list sortable and filterable without decoding |
 | Two-pointers | Football and Ladies Football | Confirmed by the owner: both codes have the two-point score; Hurling and Camogie don't |
 | Main tool | Claude Code in Terminal; Xcode for Previews, the Simulator and devices | Claude Code reads `CLAUDE.md` automatically, handles git and PRs, and runs builds and tests; GitHub is the shared record for every session |
 
@@ -56,8 +57,8 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 ## Phase 2: Core tracking (MVP)
 
 - [x] Add GitHub Actions CI (macOS: build the app, run `MatchCore` tests; Linux: run `MatchCore` tests), so every app PR is checked from the start
-- [ ] SwiftData models (CloudKit-compatible, see `CLAUDE.md`) and mapping to/from `MatchCore`; stored on the device only until iCloud is turned on in Phase 4
-  - Decide in this PR how events are stored (one SwiftData model per event, or the event list encoded on the match) and record the choice in the Decisions table
+- [x] SwiftData models (CloudKit-compatible, see `CLAUDE.md`) and mapping to/from `MatchCore`; stored on the device only until iCloud is turned on in Phase 4
+  - [x] Decide how events are stored (one SwiftData model per event, or the event list encoded on the match) and record the choice in the Decisions table: encoded on the match
 - [ ] Home and match list with filter
 - [ ] Match create/edit form (teams, code, competition, date, venue, referee; no period lengths)
 - [ ] Match details: scoreboard, wall-clock timer, period transitions
