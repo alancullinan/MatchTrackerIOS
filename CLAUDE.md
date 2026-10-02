@@ -66,7 +66,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | --- | --- |
 | `Match.swift` | `Match` (teams, events, clock, `legacyID`, `liveShareID`), `Match.new(...)`, `match[.team1]` |
 | `MatchDetails.swift` | `MatchDetails` (what the match form edits), `Match.new(details)`, `match.apply(_:)`, `canChangeMatchType`, `MatchType.displayName` |
-| `Team.swift`, `Player.swift`, `TeamSide.swift` | 30-player rosters (`Team.roster`), optional names, `Team.colors`, `Team.asksForScorers`, `.team1` / `.team2` |
+| `Team.swift`, `Player.swift`, `TeamSide.swift` | rosters of 30, up to 40 (`Team.roster`, `startingRosterSize`, `maxRosterSize`), optional names, `Team.colors`, `Team.asksForScorers`, `.team1` / `.team2` |
 | `TeamColors.swift` | `KitColor` (the palette, stored by case name) and `TeamColors` (main + optional second colour) |
 | `MatchEvent.swift` | `MatchEvent` and its `Kind` (shot, foul, card, kickout, substitution, note, periodEnd); `side` and `type` |
 | `MatchClock.swift` | Wall-clock timer: `elapsed(at:)`, `start(at:)`, `pause(at:)` |
@@ -78,6 +78,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | `EventOrder.swift` | `eventsInOrder`, `eventsNewestFirst`, `score(_:through:)` (score at any event) |
 | `Score.swift` | `Score` (goals, points, two-pointers, total, "1-05"), `match.score(_:)`, `MatchType.allowsTwoPointers` |
 | `Stats.swift` | `match.stats(_:)` → `TeamStats`: shooting, per-player stats with score by shot type, fouls, cards, substitutions |
+| `Roster.swift` | `match.updateRoster(_:players:)` (the team sheet editor's rules), `isReferenced(_:)`, `team.nextExtraPlayer()` |
 | `PlayerPanel.swift` | 30-slot panels (`PlayerPanel.empty`) |
 | `Identifiers.swift`, `Enums.swift` | Typed UUID ids; the enums |
 
@@ -147,8 +148,8 @@ Rules of the sport and lessons from real bugs - keep them whatever the UI looks 
 - Stats: accuracy is scored shots / all shots, and is `nil` (not 0%) with no shots. Players are ranked by score, then jersey number; shots without a player are grouped last. Stats work on any set of events, so a single period can be shown.
 
 **Players and panels**
-- Each team has 30 players, jersey numbers 1-30; names are optional.
-- A panel has **exactly 30 fixed slots**; the slot is the jersey number. Empty slots are kept; panels are never sorted or compacted.
+- Each team starts with 30 players, jersey numbers 1-30; players 31-40 can be added on demand (owner's choice: up to 40, added only when needed, so the scorer's team sheet stays short). Numbers always run 1 to n without gaps. The first 30 are never removed; an added player can be removed only if no event names them. Names are optional and can be edited any time.
+- A panel has **30 fixed slots** (to grow to 40 like rosters when the panel editor is built); the slot is the jersey number. Empty slots are kept; panels are never sorted or compacted.
 - Panel import into a team is allowed only before throw-in, overwrites names in place and **never regenerates player ids** (events reference them).
 
 **Data safety**
@@ -185,7 +186,7 @@ The agreed design, tried as a clickable mockup: https://claude.ai/artifact/VpABc
 2. The scorer sheet then opens (unless switched off for that team):
    - **Point / 2-Pointer** switch at the top (not for goals);
    - how it was taken as chips: From play, Free, 45 (65 in hurling/camogie), Penalty, Mark, Sideline;
-   - the **team sheet** to pick the scorer: laid out like the pitch, forwards at the top down to the goalkeeper, subs 16-30 below. Each player shows number, first name and surname (surnames are often shared). Unnamed players show the number only;
+   - the **team sheet** to pick the scorer: laid out like the pitch, forwards at the top down to the goalkeeper, subs 16-30 below (up to 40 if players were added). Each player shows number, first name and surname (surnames are often shared). Unnamed players show the number only;
    - "Add note", collapsed until wanted.
 3. Picking a player only highlights them (tap again to clear, or tap another). **Nothing is saved until Done**, so a wrong pick is just a re-tap.
 4. "Undo point" (top left) removes the score. Dismissing the sheet keeps the score without a scorer.
@@ -200,6 +201,7 @@ The agreed design, tried as a clickable mockup: https://claude.ai/artifact/VpABc
 - **Substitution**: one team sheet; pick the player coming off, then it moves on to the player coming on. Picking the same player for both moves them across.
 - **Events list**: from the toolbar (not by tapping the last-event card: on smaller phones it covers the second team's More button until scrolled, so a missed tap would open the list). Newest first, by period; tap an event for its sheet, swipe to delete (not a period end).
 - **Times**: every event's sheet has a collapsed "When" to change its period and time. Tapping the clock adjusts it; the period only changes through the main button.
+- **Team sheet**: More › Team Sheet, available any time (the event rows are disabled while the ball isn't in play; this one isn't). A name per number, Next moves to the next number, "Add Player 31" up to 40, swipe to remove an unused added player. Nothing saved until Done; swipe-down is blocked while there are changes.
 - **Note**: a team's from More, the match's from the ••• menu. The text is saved however the sheet closes; Cancel or blank text deletes it.
 
 ## Commands

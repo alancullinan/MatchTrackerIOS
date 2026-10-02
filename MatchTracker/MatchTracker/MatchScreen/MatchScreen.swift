@@ -48,6 +48,7 @@ struct MatchScreen: View {
     @State private var moreFor: TeamSide?
     @State private var showsEvents = false
     @State private var editsClock = false
+    @State private var teamSheetFor: TeamSide?
 
     /// How long Undo stays on the last-event card after a change.
     private static let undoSeconds: Duration = .seconds(6)
@@ -113,9 +114,12 @@ struct MatchScreen: View {
             MatchFormView(editing: match)
         }
         .sheet(item: Binding(get: { moreFor.map(SheetTeam.init) }, set: { moreFor = $0?.side })) { item in
-            MoreSheet(teamName: EventText.teamName(match[item.side]), side: item.side, canRecord: match.canRecordEvents) {
-                session.perform($0, at: .now)
-            }
+            MoreSheet(teamName: EventText.teamName(match[item.side]), side: item.side, canRecord: match.canRecordEvents,
+                      onRecord: { session.perform($0, at: .now) },
+                      onTeamSheet: { teamSheetFor = item.side })
+        }
+        .sheet(item: Binding(get: { teamSheetFor.map(SheetTeam.init) }, set: { teamSheetFor = $0?.side })) { item in
+            TeamSheetEditor(session: session, side: item.side)
         }
         .sheet(item: Binding(get: { session.detailsEvent.map(SheetEvent.init) },
                              set: { session.detailsEvent = $0?.eventID })) { item in

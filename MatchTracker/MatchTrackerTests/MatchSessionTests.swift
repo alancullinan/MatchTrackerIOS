@@ -264,4 +264,19 @@ struct MatchSessionTests {
         #expect(try stored().clock.elapsed(at: at(60)) == 180)
         #expect(session.match.clock.isRunning)
     }
+
+    // MARK: - Team sheet
+
+    @Test func anEditedTeamSheetIsSaved() throws {
+        var players = session.match.team2.players
+        players[0].name = "Aoife Casey"
+        players.append(Player(jerseyNumber: 31, name: "Ciara Byrne"))
+
+        let saved = session.updateRoster(.team2, players: players)
+        #expect(saved)
+        let team = try stored().team2
+        #expect(team.players.count == 31)
+        #expect(team.player(jersey: 1)?.name == "Aoife Casey")
+        #expect(team.player(jersey: 31)?.name == "Ciara Byrne")
+    }
 }

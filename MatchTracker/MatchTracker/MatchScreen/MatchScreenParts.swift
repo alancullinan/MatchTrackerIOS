@@ -247,12 +247,13 @@ struct LastEventCard: View {
 
 /// Everything else that can be recorded for a team: a miss, a foul (with any
 /// card), a kickout, a substitution or a note. Each is recorded at the tap, then its
-/// sheet opens for the details.
+/// sheet opens for the details. Also the team sheet, which can be edited any time.
 struct MoreSheet: View {
     let teamName: String
     let side: TeamSide
     let canRecord: Bool
     let onRecord: (MatchSession.Action) -> Void
+    var onTeamSheet: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
 
@@ -274,8 +275,23 @@ struct MoreSheet: View {
                 row("Note", detail: "Anything worth remembering", action: .note(side)) {
                     Image(systemName: "text.bubble")
                 }
+
+                Section {
+                    Button {
+                        dismiss()
+                        onTeamSheet()
+                    } label: {
+                        LabeledContent {
+                            Text("Names and numbers")
+                        } label: {
+                            Label { Text("Team Sheet") } icon: {
+                                Image(systemName: "person.3").foregroundStyle(.primary).frame(width: 26, height: 26)
+                            }
+                        }
+                    }
+                    .tint(.primary)
+                }
             }
-            .disabled(!canRecord)
             .navigationTitle(teamName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -305,6 +321,7 @@ struct MoreSheet: View {
             }
         }
         .tint(.primary)
+        .disabled(!canRecord)
     }
 
     private func record(_ action: MatchSession.Action) {

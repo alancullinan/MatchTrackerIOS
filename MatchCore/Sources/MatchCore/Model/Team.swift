@@ -1,6 +1,8 @@
 public struct Team: Hashable, Sendable, Codable {
-    /// Players per team; jersey numbers run 1 to `rosterSize`.
-    public static let rosterSize = 30
+    /// Players a team starts with; jersey numbers run 1 to 30.
+    public static let startingRosterSize = 30
+    /// The most players a team can have: up to 10 more can be added, numbered 31 to 40.
+    public static let maxRosterSize = 40
 
     public var name: String
     public var players: [Player]
@@ -26,9 +28,9 @@ public struct Team: Hashable, Sendable, Codable {
         self.lastPanelID = lastPanelID
     }
 
-    /// A team of `rosterSize` unnamed players, numbered from 1.
+    /// A team of `startingRosterSize` unnamed players, numbered from 1.
     public static func roster(name: String) -> Team {
-        Team(name: name, players: (1...rosterSize).map { Player(jerseyNumber: $0) })
+        Team(name: name, players: (1...startingRosterSize).map { Player(jerseyNumber: $0) })
     }
 
     public func player(_ id: PlayerID) -> Player? {
