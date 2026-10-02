@@ -108,7 +108,9 @@ public enum PWAImporter {
         }
 
         // The PWA's running time is now - periodStartTimestamp; a paused clock keeps it in elapsedTime.
-        var clock = MatchClock(period: pwa.currentPeriod, bankedSeconds: pwa.elapsedTime)
+        // Match Over without extra time is plain Full Time here: .matchOver means after extra time.
+        let period = pwa.currentPeriod == .matchOver && !wentToExtraTime ? .fullTime : pwa.currentPeriod
+        var clock = MatchClock(period: period, bankedSeconds: pwa.elapsedTime)
         if !pwa.isPaused, let start = pwa.periodStartTimestamp {
             clock.bankedSeconds = 0
             clock.runningSince = Date(timeIntervalSince1970: Double(start) / 1000)

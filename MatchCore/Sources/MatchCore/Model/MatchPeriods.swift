@@ -9,6 +9,15 @@ extension MatchPeriod {
         }
     }
 
+    /// The name to show. `.matchOver` is only reached after extra time, so it
+    /// reads "Full Time (AET)"; the raw value stays "Match Over" for PWA backups.
+    public var displayName: String {
+        switch self {
+        case .matchOver: "Full Time (AET)"
+        default: rawValue
+        }
+    }
+
     /// Position in play order, for sorting.
     var order: Int {
         MatchPeriod.allCases.firstIndex(of: self)!
@@ -33,8 +42,8 @@ extension Match {
     public var canRecordEvents: Bool { clock.period.isPlaying }
 
     /// The playing period `start` would begin from the current break, if any.
-    /// Any match can go to extra time, so Full Time always offers it; `finish`
-    /// is the other choice there.
+    /// Full Time ends a match unless extra time is started from it; there is no
+    /// separate step to finish a match.
     public var nextPlayingPeriod: MatchPeriod? {
         switch clock.period {
         case .notStarted: .firstHalf
@@ -75,14 +84,6 @@ extension Match {
         let finalTime = clock.elapsed(at: now)
         events.append(MatchEvent(period: clock.period, time: finalTime, kind: .periodEnd))
         clock = MatchClock(period: after, bankedSeconds: after == .matchOver ? finalTime : 0)
-        return true
-    }
-
-    /// Ends the match at Full Time, without extra time.
-    @discardableResult
-    public mutating func finish() -> Bool {
-        guard clock.period == .fullTime else { return false }
-        clock = MatchClock(period: .matchOver)
         return true
     }
 

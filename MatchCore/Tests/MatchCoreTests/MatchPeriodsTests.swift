@@ -18,7 +18,7 @@ private let point = MatchEvent.Kind.shot(side: .team1, player: nil, outcome: .po
     #expect(MatchPeriod.allCases.filter(\.isPlaying) == [.firstHalf, .secondHalf, .extraTimeFirstHalf, .extraTimeSecondHalf])
 }
 
-@Test func aMatchFinishedAtFullTime() {
+@Test func aMatchEndsAtFullTime() {
     var match = newMatch()
     let started = match.start(at: at(0))
     #expect(started)
@@ -34,11 +34,10 @@ private let point = MatchEvent.Kind.shot(side: .team1, player: nil, outcome: .po
 
     let ended2 = match.endPeriod(at: at(4900))
     #expect(ended2)
-    #expect(match.clock.period == .fullTime)
-
-    let finished = match.finish()
-    #expect(finished)
-    #expect(match.clock.period == .matchOver)
+    // Full Time is the end of the match; extra time can still be started from it.
+    #expect(match.clock == MatchClock(period: .fullTime))
+    #expect(match.nextPlayingPeriod == .extraTimeFirstHalf)
+    #expect(!match.canRecordEvents)
     #expect(match.events.map(\.period) == [.firstHalf, .secondHalf])
     #expect(match.events.map(\.time) == [1900, 2100])
     #expect(match.events.allSatisfy { $0.kind == .periodEnd })
@@ -77,19 +76,11 @@ private let point = MatchEvent.Kind.shot(side: .team1, player: nil, outcome: .po
     #expect(match.clock.period == .extraTimeFirstHalf)
 }
 
-@Test func finishingIsOnlyForFullTime() {
-    var match = newMatch()
-    let finished = match.finish()
-    #expect(!finished)
-    match.start(at: at(0))
-    let finished2 = match.finish()
-    #expect(!finished2)
-    match.endPeriod(at: at(10)); match.start(at: at(20)); match.endPeriod(at: at(30))
-    // Full Time offers both: extra time, or finishing.
-    #expect(match.nextPlayingPeriod == .extraTimeFirstHalf)
-    let finished3 = match.finish()
-    #expect(finished3)
-    #expect(match.clock.period == .matchOver)
+@Test func periodsShowFullTimeAndFullTimeAET() {
+    #expect(MatchPeriod.allCases.map(\.displayName) == [
+        "Not Started", "1st Half", "Half Time", "2nd Half", "Full Time",
+        "Extra Time 1st Half", "Extra Time Half Time", "Extra Time 2nd Half", "Full Time (AET)",
+    ])
 }
 
 @Test func endingAPeriodTwiceRecordsOneEnd() {

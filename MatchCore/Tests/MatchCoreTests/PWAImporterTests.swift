@@ -142,6 +142,20 @@ private func oneMatch(events: String = "[]", extra: String = "", panels: String 
     #expect(result.warnings.count == 1)
 }
 
+@Test func aMatchLeftAtMatchOverIsFullTimeUnlessItWentToExtraTime() throws {
+    let noExtraTime = try PWAImporter.convert(oneMatch(
+        events: #"[{"id":1,"type":"periodEnd","period":"Full Time","timeElapsed":2000}]"#,
+        extra: #","currentPeriod":"Match Over""#
+    ))
+    #expect(noExtraTime.matches[0].clock.period == .fullTime)
+
+    let extraTime = try PWAImporter.convert(oneMatch(
+        events: #"[{"id":1,"type":"periodEnd","period":"Extra Time Half Time","timeElapsed":600}]"#,
+        extra: #","currentPeriod":"Match Over""#
+    ))
+    #expect(extraTime.matches[0].clock.period == .matchOver)
+}
+
 @Test func aPeriodEndIntoAPlayingPeriodIsAnError() throws {
     #expect(throws: PWAImportError.unexpectedPeriodEnd(matchID: "1754435709770-961121", eventID: "7", period: .secondHalf)) {
         try PWAImporter.convert(oneMatch(events: #"[{"id":7,"type":"periodEnd","period":"2nd Half","timeElapsed":0}]"#))
