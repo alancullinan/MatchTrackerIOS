@@ -1,3 +1,4 @@
+import MatchCore
 import SwiftData
 import SwiftUI
 
@@ -9,6 +10,8 @@ struct MatchListView: View {
     @State private var searchText = ""
     @State private var matchToDelete: StoredMatch?
     @State private var deleteError: String?
+    @State private var isAddingMatch = false
+    @State private var matchToEdit: Match?
 
     private var shownMatches: [StoredMatch] {
         storedMatches.filter { MatchList.matches($0, query: searchText) }
@@ -26,10 +29,28 @@ struct MatchListView: View {
                     Button("Delete", systemImage: "trash", role: .destructive) {
                         matchToDelete = stored
                     }
+                    editButton(for: stored)
+                }
+                .contextMenu {
+                    editButton(for: stored)
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        matchToDelete = stored
+                    }
                 }
             }
             .listStyle(.plain)
             .navigationTitle("Matches")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("New Match", systemImage: "plus") { isAddingMatch = true }
+                }
+            }
+            .sheet(isPresented: $isAddingMatch) {
+                MatchFormView()
+            }
+            .sheet(item: $matchToEdit) { match in
+                MatchFormView(editing: match)
+            }
             .searchable(text: $searchText, prompt: "Team or competition")
             .overlay {
                 if storedMatches.isEmpty {
@@ -60,6 +81,15 @@ struct MatchListView: View {
             } message: {
                 Text(deleteError ?? "")
             }
+        }
+    }
+
+    /// Edit, for a match that can be read; one that can't is never overwritten.
+    @ViewBuilder
+    private func editButton(for stored: StoredMatch) -> some View {
+        if let match = try? stored.match() {
+            Button("Edit", systemImage: "pencil") { matchToEdit = match }
+                .tint(.blue)
         }
     }
 

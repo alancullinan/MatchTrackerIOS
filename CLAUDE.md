@@ -61,6 +61,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | File (`Sources/MatchCore/Model/`) | What it holds |
 | --- | --- |
 | `Match.swift` | `Match` (teams, events, clock, `legacyID`, `liveShareID`), `Match.new(...)`, `match[.team1]` |
+| `MatchDetails.swift` | `MatchDetails` (what the match form edits), `Match.new(details)`, `match.apply(_:)`, `canChangeMatchType`, `MatchType.displayName` |
 | `Team.swift`, `Player.swift`, `TeamSide.swift` | 30-player rosters (`Team.roster`), optional names, `.team1` / `.team2` |
 | `MatchEvent.swift` | `MatchEvent` and its `Kind` (shot, foul, card, kickout, substitution, note, periodEnd); `side` and `type` |
 | `MatchClock.swift` | Wall-clock timer: `elapsed(at:)`, `start(at:)`, `pause(at:)` |
@@ -98,7 +99,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 - `loadFixture("pwa-backup")` loads the PWA fixture; only importer tests use it.
 
 ### App rules
-- iOS 26+, SwiftUI, `NavigationStack`, `@Observable`. No `#available` checks below iOS 26; seed Previews with preview traits (`PreviewModifier` with an in-memory container) and varied sample data.
+- iOS 26+, iPhone and iPad only: the app target supports no native macOS or visionOS (Xcode's multiplatform template added them; iOS-only APIs such as `textInputAutocapitalization` wouldn't build there). SwiftUI, `NavigationStack`, `@Observable`. No `#available` checks below iOS 26; seed Previews with preview traits (`PreviewModifier` with an in-memory container) and varied sample data.
 - **One persistent store: SwiftData, synced to the user's private iCloud database (CloudKit).** iCloud sync is part of that store, not a second one. Never add another store, cache or mirror of match data - a second store that falls out of step silently loses recent matches (it happened in the PWA).
 - **SwiftData models must stay CloudKit-compatible**, or sync silently stops working:
   - every stored property is optional or has a default value;
