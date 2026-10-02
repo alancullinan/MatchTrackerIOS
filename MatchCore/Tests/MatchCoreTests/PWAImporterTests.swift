@@ -23,15 +23,6 @@ private func oneMatch(events: String = "[]", extra: String = "", panels: String 
         """)
 }
 
-private func points(_ outcome: ShotOutcome) -> Int {
-    switch outcome {
-    case .goal: 3
-    case .point: 1
-    case .twoPointer: 2
-    default: 0
-    }
-}
-
 // MARK: - The real backup
 
 @Test func everyMatchAndPanelInTheFixtureConverts() throws {
@@ -53,13 +44,14 @@ private func points(_ outcome: ShotOutcome) -> Int {
     for (pwa, match) in zip(source.matches, result.matches) {
         #expect(match.events.count == pwa.events.count, "\(pwa.id)")
         for side in TeamSide.allCases {
+            // The PWA's computeTeamScore: goals, and points with 2 per two-pointer.
             let teamID = side == .team1 ? pwa.team1.id : pwa.team2.id
-            let before = pwa.events.filter { $0.teamId == teamID }.compactMap(\.shotOutcome).map(points).reduce(0, +)
-            let after = match.events.compactMap { event -> Int? in
-                guard case .shot(let s, _, let outcome, _) = event.kind, s == side else { return nil }
-                return points(outcome)
-            }.reduce(0, +)
-            #expect(before == after, "\(pwa.id) \(side)")
+            let outcomes = pwa.events.filter { $0.type == .shot && $0.teamId == teamID }.compactMap(\.shotOutcome)
+            let goals = outcomes.filter { $0 == .goal }.count
+            let points = outcomes.filter { $0 == .point }.count + 2 * outcomes.filter { $0 == .twoPointer }.count
+            let score = match.score(side)
+            #expect(score.goals == goals, "\(pwa.id) \(side)")
+            #expect(score.points == points, "\(pwa.id) \(side)")
         }
     }
 }

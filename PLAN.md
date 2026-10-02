@@ -44,7 +44,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] Move the PWA types into `Sources/MatchCore/PWA/` and rename them `PWABackup`, `PWAMatch`, `PWATeam`, `PWAPlayer`, `PWAEvent`, `PWAPanel`, `PWAPanelPlayer`; keep their round-trip tests passing
 - [x] Native model in `Sources/MatchCore/Model/`: `Match`, `Team`, `Player`, `MatchEvent` (+ `kind` enum), `MatchClock`, `PlayerPanel`, typed IDs (see `CLAUDE.md`)
 - [x] One-time PWA importer: `PWABackup` -> native model, tested against the fixture (all 71 matches and 6 panels convert; every match's score is unchanged; re-running skips matches already imported)
-- [ ] Score calculation per match type
+- [x] Score calculation per match type
 - [ ] Period state machine, playing periods, automatic period-end events
 - [ ] Event sorting by period, then time
 - [x] Panels: 30 fixed slots; legacy panels normalised (done in the importer, following the PWA's `normalizePanel`)
