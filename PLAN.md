@@ -51,7 +51,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] Period state machine, playing periods, automatic period-end events
 - [x] Event sorting by period, then time
 - [x] Panels: 30 fixed slots; legacy panels normalised (done in the importer, following the PWA's `normalizePanel`)
-- [ ] Stats: shooting accuracy, scorers
+- [x] Stats: shooting accuracy, scorers
 
 ## Phase 2: Core tracking (MVP)
 
