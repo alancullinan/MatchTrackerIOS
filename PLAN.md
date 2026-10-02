@@ -27,6 +27,7 @@ A native SwiftUI iOS app for tracking Gaelic games matches, succeeding the owner
 | Scorer sheet for each team | Opens for both teams by default, with a per-team switch to stop asking | The owner knows home names but often only opposition numbers; names can be added to the team sheet later and show on earlier scores |
 | Misses | Under More with fouls, cards and subs; same sheet as a score (Wide / Saved / Short / Post) | A miss is an event like the others and needs the player and shot type, so no separate button or hidden press-and-hold |
 | Fouls, cards, kickouts, subs, notes | Recorded at the tap from More, then a details sheet, like scores. A card is part of a foul, picked on the foul sheet (yellow and red; black only in football and hurling); there is no separate Card entry. A kickout belongs to the team taking it and is recorded as won; the sheet switches it to lost. A substitution picks the player off, then on, on one team sheet. A note's text is saved however its sheet closes, and a blank note is deleted | Same flow everywhere: the time is right however long the details take, and Undo/Details work the same for every event. |
+| Time/period editor | The clock is adjusted by ±10 s / ±1 min on top of the running time; the period is never set directly. Event times are edited on each event's sheet ("When"), within the periods played so far and not after a period ended; a period end's time can move but not before the last event in it | Changing period only through the main button keeps every period end recorded. A half ended late is fixed by editing its period end's time, and a clock started late by adjusting it |
 | Team colours | A fixed palette (`KitColor`, 12 colours) with a main and an optional second colour per team, stored with the match | Covers the county and club colours with one tap each, and we control how each looks so all read in sunlight; arbitrary colours would need a colour wheel and could be unreadable. A colour is only a case name, so the palette can grow |
 | Undo on the match screen | Undo covers the last event, ending a period (back into it, paused at its time) and starting one (back to the break, while nothing is recorded in it). It shows for 6 seconds after each change | A mistaken tap on the big button is the likeliest error on a sideline; undo keeps it one tap to fix without a confirmation on every period change |
 | Main tool | Claude Code in Terminal; Xcode for Previews, the Simulator and devices | Claude Code reads `CLAUDE.md` automatically, handles git and PRs, and runs builds and tests; GitHub is the shared record for every session |
@@ -76,8 +77,8 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] Score entry (goal, point, two-pointer, misses, shot types). The scorer sheet after each flag tap (unless switched off per team); Miss under More; Details reopens a recent shot
 - [x] Foul/card, kickout, substitution and note entry. Each is recorded at the tap from More, then its sheet opens for the details; Details reopens it. A match-wide note is in the ••• menu
 - [ ] Another pass on the match screen's look, with the owner, once tracking works end to end
-- [ ] Events list with edit/delete
-- [ ] Time/period editor
+- [x] Events list with edit/delete: newest first, grouped by period; tap to edit (details and time), swipe to delete. Opened from the toolbar
+- [x] Time/period editor: tap the clock (or ••• > Adjust Clock) to move it on or back; any event's period and time can be changed from its sheet, including a period end's time
 
 ## Phase 3: Players
 

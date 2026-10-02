@@ -36,9 +36,10 @@ enum EventText {
     }
 
     /// "2nd Half · 23' · 1-05 v 0-03": when, and the score straight after it.
-    static func detail(_ event: MatchEvent, in match: Match) -> String {
+    /// Without the period where it is already shown, e.g. under a period heading.
+    static func detail(_ event: MatchEvent, in match: Match, showsPeriod: Bool = true) -> String {
         let minute = event.kind == .periodEnd ? MatchClock.text(seconds: event.time) : "\(event.minute)'"
-        var parts = [event.period.displayName, minute]
+        var parts = showsPeriod ? [event.period.displayName, minute] : [minute]
         if let team1 = match.score(.team1, through: event.id), let team2 = match.score(.team2, through: event.id) {
             parts.append("\(team1) v \(team2)")
         }

@@ -46,6 +46,8 @@ struct MatchScreen: View {
 
     @State private var isEditing = false
     @State private var moreFor: TeamSide?
+    @State private var showsEvents = false
+    @State private var editsClock = false
 
     /// How long Undo stays on the last-event card after a change.
     private static let undoSeconds: Duration = .seconds(6)
@@ -63,6 +65,9 @@ struct MatchScreen: View {
                         .multilineTextAlignment(.center)
                 }
                 ClockView(match: match)
+                    .contentShape(.rect)
+                    .onTapGesture { if match.clock.period.isPlaying { editsClock = true } }
+                    .accessibilityAction(named: "Adjust clock") { if match.clock.period.isPlaying { editsClock = true } }
                 ForEach(TeamSide.allCases, id: \.self) { side in
                     TeamCard(team: match[side], score: match.score(side), flagsEnabled: match.canRecordEvents,
                              onScore: { session.perform(.score(side, $0), at: .now) },
@@ -76,11 +81,19 @@ struct MatchScreen: View {
         .safeAreaInset(edge: .bottom) { thumbZone }
         .background { PitchBackground() }
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $showsEvents) {
+            EventListView(session: session)
+        }
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Events", systemImage: "list.bullet") { showsEvents = true }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Menu("More Options", systemImage: "ellipsis") {
                     Button("Add Note", systemImage: "text.bubble") { session.perform(.note(nil), at: .now) }
                         .disabled(!match.canRecordEvents)
+                    Button("Adjust Clock", systemImage: "clock.arrow.2.circlepath") { editsClock = true }
+                        .disabled(!match.clock.period.isPlaying)
                     Button("Edit Match", systemImage: "pencil") { isEditing = true }
                     Section("Scorer Sheet") {
                         ForEach(TeamSide.allCases, id: \.self) { side in
@@ -92,6 +105,9 @@ struct MatchScreen: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $editsClock) {
+            ClockEditor(session: session)
         }
         .sheet(isPresented: $isEditing, onDismiss: session.reload) {
             MatchFormView(editing: match)
@@ -163,10 +179,10 @@ struct MatchScreen: View {
         let showsUndo = session.undoable != nil
         if case .periodStart(let period) = session.undoable {
             LastEventCard(title: "\(period.displayName) started", detail: "The clock is running",
-                          icon: nil, showsUndo: true) { session.undo() }
+                          icon: nil, showsUndo: true, onUndo: { session.undo() })
         } else if let event = match.events.last {
             LastEventCard(title: EventText.title(event, in: match), detail: EventText.detail(event, in: match),
-                          icon: icon(for: event), showsUndo: showsUndo, onUndo: { session.undo() },
+                          icon: EventIcon(event), showsUndo: showsUndo, onUndo: { session.undo() },
                           onDetails: hasDetails(event) ? { session.detailsEvent = event.id } : nil)
         }
     }
@@ -179,25 +195,7 @@ struct MatchScreen: View {
         }
     }
 
-    /// A flag for a shot (filled for a score, outlined for a miss), the card
-    /// for a foul with one, and a symbol for anything else.
-    private func icon(for event: MatchEvent) -> LastEventCard.Icon? {
-        switch event.kind {
-        case .shot(_, _, let outcome, _):
-            switch outcome {
-            case .goal: .flag(MatchTheme.goal)
-            case .point: .flag(MatchTheme.point)
-            case .twoPointer: .flag(MatchTheme.twoPointer)
-            case .wide, .saved, .droppedShort, .offPost: .missFlag
-            }
-        case .foul(_, _, _, let card?), .card(_, _, let card): .card(card)
-        case .foul: .symbol("hand.raised.fill")
-        case .kickout: .symbol("arrow.up.forward")
-        case .substitution: .symbol("arrow.left.arrow.right")
-        case .note: .symbol("text.bubble")
-        case .periodEnd: nil
-        }
-    }
+
 }
 
 #if DEBUG

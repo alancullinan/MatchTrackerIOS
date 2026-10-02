@@ -16,7 +16,8 @@ struct EventDetailsSheet: View {
         case .kickout?: KickoutSheet(session: session, eventID: eventID)
         case .substitution?: SubstitutionSheet(session: session, eventID: eventID)
         case .note?: NoteSheet(session: session, eventID: eventID)
-        default: ScorerSheet(session: session, eventID: eventID)
+        case .periodEnd?, .card?: TimeOnlySheet(session: session, eventID: eventID)
+        case .shot?, nil: ScorerSheet(session: session, eventID: eventID)
         }
     }
 }
@@ -35,7 +36,7 @@ struct FoulSheet: View {
     var body: some View {
         if case .foul(let side, let recordedPlayer, let recordedOutcome, let recordedCard) = session.match.event(eventID)?.kind {
             let team = session.match[side]
-            EventSheetLayout(title: EventText.teamName(team), undoTitle: "Undo foul",
+            EventSheetLayout(session: session, eventID: eventID, title: EventText.teamName(team), undoTitle: "Undo foul",
                              onUndo: { session.deleteEvent(eventID); dismiss() },
                              onDone: {
                                  session.updateFoul(eventID, outcome: outcome, card: card, player: player,
@@ -95,7 +96,7 @@ struct KickoutSheet: View {
     var body: some View {
         if case .kickout(let side, let recordedPlayer, let recordedWon) = session.match.event(eventID)?.kind {
             let team = session.match[side]
-            EventSheetLayout(title: EventText.teamName(team), undoTitle: "Undo kickout",
+            EventSheetLayout(session: session, eventID: eventID, title: EventText.teamName(team), undoTitle: "Undo kickout",
                              onUndo: { session.deleteEvent(eventID); dismiss() },
                              onDone: {
                                  // Only a kickout that was won has one of this team's players winning it.
@@ -144,7 +145,7 @@ struct SubstitutionSheet: View {
     var body: some View {
         if case .substitution(let side, let recordedOff, let recordedOn) = session.match.event(eventID)?.kind {
             let team = session.match[side]
-            EventSheetLayout(title: EventText.teamName(team), undoTitle: "Undo substitution",
+            EventSheetLayout(session: session, eventID: eventID, title: EventText.teamName(team), undoTitle: "Undo substitution",
                              onUndo: { session.deleteEvent(eventID); dismiss() },
                              onDone: {
                                  session.updateSubstitution(eventID, off: off, on: on,
@@ -223,18 +224,23 @@ struct NoteSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var text = ""
     @State private var cancelled = false
+    @State private var when = EventTimeDraft()
     @FocusState private var focused: Bool
 
     var body: some View {
         if case .note(let side) = session.match.event(eventID)?.kind {
             NavigationStack {
-                TextField("What happened?", text: $text, axis: .vertical)
-                    .lineLimit(3...8)
-                    .focused($focused)
-                    .padding(12)
-                    .background(.fill.tertiary, in: .rect(cornerRadius: 12))
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        TextField("What happened?", text: $text, axis: .vertical)
+                            .lineLimit(3...8)
+                            .focused($focused)
+                            .padding(12)
+                            .background(.fill.tertiary, in: .rect(cornerRadius: 12))
+                        EventTimeField(match: session.match, eventID: eventID, draft: $when)
+                    }
                     .padding(16)
-                    .frame(maxHeight: .infinity, alignment: .top)
+                }
                     .navigationTitle(side.map { "Note · \(EventText.teamName(session.match[$0]))" } ?? "Match note")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
@@ -253,10 +259,13 @@ struct NoteSheet: View {
             .presentationDetents([.medium, .large])
             .onAppear {
                 text = session.match.event(eventID)?.note ?? ""
+                when.load(session.match.event(eventID))
                 focused = true
             }
             .onDisappear {
-                if !cancelled { session.saveNote(eventID, text: text) }
+                guard !cancelled else { return }
+                // A blank note is deleted, and then there is no time to save.
+                if session.saveNote(eventID, text: text) { when.save(eventID, in: session) }
             }
         } else {
             EventGoneView()
@@ -266,20 +275,28 @@ struct NoteSheet: View {
 
 // MARK: - Shared parts
 
-/// The frame every details sheet shares: the team as the title, Undo on the
-/// left and Done on the right, and the content scrolling below.
+/// The frame every details sheet shares: the title, Undo on the left and
+/// Done on the right, the content scrolling below, and the event's time at
+/// the bottom, collapsed until it needs changing. Done saves the time too.
 struct EventSheetLayout<Content: View>: View {
+    let session: MatchSession
+    let eventID: EventID
     let title: String
-    let undoTitle: String
-    let onUndo: () -> Void
+    /// `nil` for an event that can't be removed (a period end): the sheet offers Cancel instead.
+    let undoTitle: String?
+    var onUndo: () -> Void = {}
     let onDone: () -> Void
     @ViewBuilder let content: Content
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var when = EventTimeDraft()
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     content
+                    EventTimeField(match: session.match, eventID: eventID, draft: $when)
                 }
                 .padding(16)
             }
@@ -287,15 +304,138 @@ struct EventSheetLayout<Content: View>: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(undoTitle, role: .destructive, action: onUndo)
-                        .tint(.red)
+                    if let undoTitle {
+                        Button(undoTitle, role: .destructive, action: onUndo)
+                            .tint(.red)
+                    } else {
+                        Button("Cancel", role: .cancel) { dismiss() }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done", role: .confirm, action: onDone)
+                    Button("Done", role: .confirm) {
+                        when.save(eventID, in: session)
+                        onDone()
+                    }
                 }
             }
         }
         .presentationDragIndicator(.visible)
+        .onAppear { when.load(session.match.event(eventID)) }
+    }
+}
+
+/// An event's period and time being edited on a sheet.
+struct EventTimeDraft {
+    var period: MatchPeriod = .firstHalf
+    var minutes = 0
+    var seconds = 0
+    var isShown = false
+    private var original: (period: MatchPeriod, time: Int)?
+
+    var time: Int { minutes * 60 + seconds }
+
+    /// Starts from the event as recorded, once. Open from the start for an
+    /// event whose time is all there is to edit.
+    mutating func load(_ event: MatchEvent?) {
+        guard original == nil, let event else { return }
+        original = (event.period, event.time)
+        switch event.kind {
+        case .periodEnd, .card: isShown = true
+        default: break
+        }
+        period = event.period
+        minutes = event.time / 60
+        seconds = event.time % 60
+    }
+
+    /// Saves the period and time if they were changed, brought within what
+    /// the period allows (e.g. not after it ended).
+    func save(_ id: EventID, in session: MatchSession) {
+        guard let original, period != original.period || time != original.time,
+              let limits = session.match.timeLimits(for: id, in: period)
+        else { return }
+        session.updateTime(id, period: period, time: min(max(time, limits.lowerBound), limits.upperBound))
+    }
+}
+
+/// "When: 2nd Half · 23:14", with Change opening the period and minute and
+/// second wheels. A period end keeps its period; only its time can change.
+struct EventTimeField: View {
+    let match: Match
+    let eventID: EventID
+    @Binding var draft: EventTimeDraft
+
+    var body: some View {
+        if draft.isShown {
+            VStack(alignment: .leading, spacing: 8) {
+                SheetLabel("When")
+                if isPeriodEnd {
+                    Text(draft.period.displayName).font(.headline)
+                } else {
+                    Picker("Period", selection: $draft.period) {
+                        ForEach(match.playedPeriods, id: \.self) { Text($0.displayName).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                }
+                HStack(spacing: 0) {
+                    Picker("Minutes", selection: $draft.minutes) {
+                        ForEach(0...Match.maxEventTime / 60, id: \.self) { Text("\($0) min").tag($0) }
+                    }
+                    Picker("Seconds", selection: $draft.seconds) {
+                        ForEach(0..<60, id: \.self) { Text("\($0) sec").tag($0) }
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(height: 150)
+                if let note = limitNote {
+                    Text(note)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } else {
+            Button {
+                draft.isShown = true
+            } label: {
+                Label("\(draft.period.displayName) · \(MatchClock.text(seconds: draft.time))", systemImage: "clock")
+            }
+            .accessibilityHint("Change when it happened")
+        }
+    }
+
+    private var isPeriodEnd: Bool { match.event(eventID)?.kind == .periodEnd }
+
+    /// Explains a time that will be brought within the period's limits.
+    private var limitNote: String? {
+        guard let limits = match.timeLimits(for: eventID, in: draft.period), !limits.contains(draft.time) else { return nil }
+        if draft.time > limits.upperBound {
+            return "\(draft.period.displayName) ended at \(MatchClock.text(seconds: limits.upperBound)), so it will be saved at that time."
+        }
+        return "The last event in \(draft.period.displayName) was at \(MatchClock.text(seconds: limits.lowerBound)), so it will be saved at that time."
+    }
+}
+
+/// The details of an event with nothing to edit but its time: a period end,
+/// or a card recorded on its own by an older version.
+struct TimeOnlySheet: View {
+    let session: MatchSession
+    let eventID: EventID
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        if let event = session.match.event(eventID) {
+            EventSheetLayout(session: session, eventID: eventID, title: EventText.title(event, in: session.match),
+                             undoTitle: event.kind == .periodEnd ? nil : "Delete",
+                             onUndo: { session.deleteEvent(eventID); dismiss() },
+                             onDone: { dismiss() }) {
+                Text(EventText.detail(event, in: session.match))
+                    .foregroundStyle(.secondary)
+            }
+            .presentationDetents([.medium, .large])
+        } else {
+            EventGoneView()
+        }
     }
 }
 
@@ -397,6 +537,11 @@ struct CardSwatch: View {
 #if DEBUG
 #Preview("More sheet") {
     MoreSheet(teamName: "Commercials", side: .team1, canRecord: true) { _ in }
+}
+
+#Preview("Period end time") {
+    let session = MatchSession.preview(.halfTime)
+    return EventDetailsSheet(session: session, eventID: session.match.events.last!.id)
 }
 
 #Preview("Foul sheet") {

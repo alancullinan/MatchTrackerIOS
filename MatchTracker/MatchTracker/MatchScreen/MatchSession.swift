@@ -140,6 +140,18 @@ final class MatchSession {
         return update { $0.updateNote(id, text: text) }
     }
 
+    /// Moves an event to another time or period. See `Match.updateTime`.
+    @discardableResult
+    func updateTime(_ id: EventID, period: MatchPeriod, time: Int) -> Bool {
+        update { $0.updateTime(id, period: period, time: time) }
+    }
+
+    /// Moves the running clock on or back. See `Match.adjustClock`.
+    @discardableResult
+    func adjustClock(by seconds: Int, at now: Date) -> Bool {
+        update { $0.adjustClock(by: seconds, at: now) }
+    }
+
     private func update(_ change: (inout Match) -> Bool) -> Bool {
         var changed = match
         guard change(&changed) else { return false }

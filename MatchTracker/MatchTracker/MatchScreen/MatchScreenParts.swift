@@ -156,14 +156,46 @@ private struct FlagPressStyle: ButtonStyle {
     }
 }
 
+/// An event's icon: a flag for a shot (filled for a score, outlined for a
+/// miss), the card for a foul with one, and a symbol for anything else.
+struct EventIcon: View {
+    let event: MatchEvent
+
+    init(_ event: MatchEvent) { self.event = event }
+
+    var body: some View {
+        switch event.kind {
+        case .shot(_, _, let outcome, _):
+            switch outcome {
+            case .goal: flag(MatchTheme.goal)
+            case .point: flag(MatchTheme.point)
+            case .twoPointer: flag(MatchTheme.twoPointer)
+            case .wide, .saved, .droppedShort, .offPost: flag(nil)
+            }
+        case .foul(_, _, _, let card?), .card(_, _, let card):
+            CardSwatch(card: card).frame(width: 20, height: 27).frame(width: 30, height: 30)
+        case .foul: symbol("hand.raised.fill")
+        case .kickout: symbol("arrow.up.forward")
+        case .substitution: symbol("arrow.left.arrow.right")
+        case .note: symbol("text.bubble")
+        case .periodEnd: symbol("flag.checkered")
+        }
+    }
+
+    private func flag(_ fill: Color?) -> some View {
+        FlagIcon(fill: fill, pole: .primary).frame(width: 30, height: 30)
+    }
+
+    private func symbol(_ name: String) -> some View {
+        Image(systemName: name).font(.title3).frame(width: 30, height: 30).accessibilityHidden(true)
+    }
+}
+
 /// The latest thing that happened, with Undo for a few seconds after each entry.
 struct LastEventCard: View {
-    /// A filled flag for a score, an outline for a miss, a card, or a symbol.
-    enum Icon { case flag(Color), missFlag, card(CardType), symbol(String) }
-
     let title: String
     let detail: String
-    let icon: Icon?
+    let icon: EventIcon?
     let showsUndo: Bool
     let onUndo: () -> Void
     /// Reopens the event's details sheet; `nil` when it has none.
@@ -171,13 +203,7 @@ struct LastEventCard: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            switch icon {
-            case .flag(let color): FlagIcon(fill: color, pole: .primary).frame(width: 30, height: 30)
-            case .missFlag: FlagIcon(fill: nil, pole: .primary).frame(width: 30, height: 30)
-            case .card(let card): CardSwatch(card: card).frame(width: 20, height: 27).frame(width: 30)
-            case .symbol(let name): Image(systemName: name).font(.title3).frame(width: 30, height: 30)
-            case nil: EmptyView()
-            }
+            icon
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.callout.weight(.semibold))
