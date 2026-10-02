@@ -29,6 +29,7 @@ Other MatchTracker repos exist (`MatchTracker`, the original 2025 Swift app, and
 - Loop until it builds and the tests pass, then check UI changes in Previews or the Simulator before opening a PR.
 
 ### One-off setup on the Mac
+- **Point the command line at Xcode 27**: `sudo xcode-select -s /Applications/Xcode.app` (check with `xcode-select -p`). Otherwise Terminal's `swift` is the Command Line Tools' older Swift, and `swift test` fails with "no such module 'Testing'". Other Xcode copies on the Mac (e.g. `Xcode New.app`, Swift 6.2) are not the project's toolchain.
 - **Xcode's MCP server**, so Claude Code can build, run tests, render Previews and use the Simulator itself: in Xcode open Settings → Intelligence and turn on **Xcode Tools**; then, in Terminal, `claude mcp add --transport stdio xcode -- xcrun mcpbridge` (check with `claude mcp list`). Xcode must be running with the project open. With it, check UI work in Previews or the Simulator before opening a PR.
 - **SwiftUI Pro skill** (optional, recommended): Paul Hudson's agent skill for current SwiftUI APIs, navigation, state and accessibility. In Claude Code: `/plugin marketplace add twostraws/SwiftUI-Agent-Skill`, then `/plugin install swiftui-pro@swiftui-agent-skill`.
 
