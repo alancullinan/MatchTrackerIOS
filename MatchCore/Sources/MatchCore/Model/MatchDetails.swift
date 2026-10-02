@@ -1,11 +1,14 @@
 import Foundation
 
 /// The parts of a match set when it is created and changed by editing it:
-/// everything except the players, events and clock.
+/// everything except the players, events and clock. Team colours can change
+/// at any time.
 public struct MatchDetails: Hashable, Sendable {
     public var matchType: MatchType
     public var team1Name: String
     public var team2Name: String
+    public var team1Colors: TeamColors?
+    public var team2Colors: TeamColors?
     public var competition: String
     public var date: Date
     public var venue: String
@@ -15,6 +18,8 @@ public struct MatchDetails: Hashable, Sendable {
         matchType: MatchType = .football,
         team1Name: String = "",
         team2Name: String = "",
+        team1Colors: TeamColors? = nil,
+        team2Colors: TeamColors? = nil,
         competition: String = "",
         date: Date,
         venue: String = "",
@@ -23,6 +28,8 @@ public struct MatchDetails: Hashable, Sendable {
         self.matchType = matchType
         self.team1Name = team1Name
         self.team2Name = team2Name
+        self.team1Colors = team1Colors
+        self.team2Colors = team2Colors
         self.competition = competition
         self.date = date
         self.venue = venue
@@ -67,7 +74,7 @@ extension Match {
     public static func new(_ details: MatchDetails) -> Match? {
         guard details.isComplete else { return nil }
         let details = details.trimmed
-        return .new(
+        var match = Match.new(
             matchType: details.matchType,
             team1Name: details.team1Name,
             team2Name: details.team2Name,
@@ -76,6 +83,9 @@ extension Match {
             venue: details.venue,
             referee: details.referee
         )
+        match.team1.colors = details.team1Colors
+        match.team2.colors = details.team2Colors
+        return match
     }
 
     public var details: MatchDetails {
@@ -83,6 +93,8 @@ extension Match {
             matchType: matchType,
             team1Name: team1.name,
             team2Name: team2.name,
+            team1Colors: team1.colors,
+            team2Colors: team2.colors,
             competition: competition,
             date: date,
             venue: venue,
@@ -107,6 +119,8 @@ extension Match {
         matchType = details.matchType
         team1.name = details.team1Name
         team2.name = details.team2Name
+        team1.colors = details.team1Colors
+        team2.colors = details.team2Colors
         competition = details.competition
         date = details.date
         venue = details.venue

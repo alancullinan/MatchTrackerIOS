@@ -8,7 +8,8 @@ import Testing
 private let kickOff = Date(timeIntervalSince1970: 1_790_000_000)
 
 /// A match that uses every part of the model: named and unnamed players, a
-/// panel id, a running clock, and one event of every kind.
+/// panel id, team colours with and without a second colour, a running clock,
+/// and one event of every kind.
 private func sampleMatch() -> Match {
     var match = Match.new(
         matchType: .football,
@@ -23,6 +24,8 @@ private func sampleMatch() -> Match {
     match.liveShareID = "live-1"
     match.team1.players[10].name = "Named Player"
     match.team2.lastPanelID = PanelID()
+    match.team1.colors = TeamColors(.maroon, .white)
+    match.team2.colors = TeamColors(.green)
     let scorer = match.team1.players[10].id
     let sub = match.team2.players[20].id
     match.events = [
@@ -97,6 +100,21 @@ struct StorageTests {
         let stored = try context.store(sampleMatch())
         stored.clockPeriod = "penaltyShootout"
         #expect(throws: StoredDataError.self) { try stored.match() }
+    }
+
+    @Test func anUnknownColourThrowsInsteadOfGuessing() throws {
+        let stored = try context.store(sampleMatch())
+        stored.team2SecondaryColor = "tartan"
+        #expect(throws: StoredDataError.self) { try stored.match() }
+    }
+
+    @Test func aMatchWithoutColoursReadsBackWithout() throws {
+        var match = sampleMatch()
+        match.team1.colors = nil
+        let stored = try context.store(match)
+        #expect(stored.team1PrimaryColor == nil)
+        #expect(stored.team1SecondaryColor == nil)
+        #expect(try stored.match().team1.colors == nil)
     }
 
     @Test func unreadableEventsThrowInsteadOfReadingAsNone() throws {

@@ -82,5 +82,10 @@ struct MatchListTests {
         #expect(periods.isSuperset(of: [.notStarted, .secondHalf, .firstHalf, .fullTime, .fullTimeAfterExtraTime]))
         #expect(readable.contains { $0.clock.isRunning })
         #expect(readable.contains { $0.clock.period.isPlaying && !$0.clock.isRunning })
+
+        let colors = readable.flatMap { [$0.team1.colors, $0.team2.colors] }
+        #expect(colors.contains { $0 == nil })
+        #expect(colors.contains { $0?.secondary != nil })
+        #expect(colors.contains { $0 != nil && $0?.secondary == nil })
     }
 }
