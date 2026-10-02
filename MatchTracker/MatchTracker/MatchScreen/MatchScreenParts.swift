@@ -158,22 +158,24 @@ private struct FlagPressStyle: ButtonStyle {
 
 /// The latest thing that happened, with Undo for a few seconds after each entry.
 struct LastEventCard: View {
-    /// A filled flag for a score, an outline for a miss.
-    enum Flag { case filled(Color), outline }
+    /// A filled flag for a score, an outline for a miss, a card, or a symbol.
+    enum Icon { case flag(Color), missFlag, card(CardType), symbol(String) }
 
     let title: String
     let detail: String
-    let flag: Flag?
+    let icon: Icon?
     let showsUndo: Bool
     let onUndo: () -> Void
-    /// Reopens the scorer sheet; `nil` when the event has no details to edit.
+    /// Reopens the event's details sheet; `nil` when it has none.
     var onDetails: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 12) {
-            switch flag {
-            case .filled(let color): FlagIcon(fill: color, pole: .primary).frame(width: 30, height: 30)
-            case .outline: FlagIcon(fill: nil, pole: .primary).frame(width: 30, height: 30)
+            switch icon {
+            case .flag(let color): FlagIcon(fill: color, pole: .primary).frame(width: 30, height: 30)
+            case .missFlag: FlagIcon(fill: nil, pole: .primary).frame(width: 30, height: 30)
+            case .card(let card): CardSwatch(card: card).frame(width: 20, height: 27).frame(width: 30)
+            case .symbol(let name): Image(systemName: name).font(.title3).frame(width: 30, height: 30)
             case nil: EmptyView()
             }
             VStack(alignment: .leading, spacing: 2) {
@@ -192,11 +194,15 @@ struct LastEventCard: View {
                         Button("Details", action: onDetails)
                             .buttonStyle(.glass)
                             .controlSize(.large)
+                            .fixedSize()
                     }
                     Button("Undo", action: onUndo)
                         .buttonStyle(.glass)
                         .controlSize(.large)
+                        .fixedSize()
                 }
+                // The buttons keep their size; a long title wraps instead.
+                .layoutPriority(1)
                 .transition(.opacity.combined(with: .scale))
             }
         }
@@ -213,29 +219,53 @@ struct LastEventCard: View {
     }
 }
 
-/// Everything else that can be recorded for a team. For now: a miss.
+/// Everything else that can be recorded for a team: a miss, a foul, a card,
+/// a kickout, a substitution or a note. Each is recorded at the tap, then its
+/// sheet opens for the details.
 struct MoreSheet: View {
     let teamName: String
+    let side: TeamSide
     let canRecord: Bool
-    let onMiss: () -> Void
+    let onRecord: (MatchSession.Action) -> Void
 
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             List {
-                Button {
-                    dismiss()
-                    onMiss()
-                } label: {
-                    LabeledContent {
-                        Text("Wide, saved, short or off the post")
-                    } label: {
-                        Label { Text("Miss") } icon: { FlagIcon(fill: nil, pole: .primary).frame(width: 26, height: 26) }
-                    }
+                row("Miss", detail: "Wide, saved, short or off the post", action: .miss(side)) {
+                    FlagIcon(fill: nil, pole: .primary)
                 }
-                .disabled(!canRecord)
+                row("Foul", detail: "A free or penalty conceded", action: .foul(side, card: nil)) {
+                    Image(systemName: "hand.raised.fill")
+                }
+                LabeledContent {
+                    HStack(spacing: 4) {
+                        ForEach(CardType.offered, id: \.self) { card in
+                            Button { record(.foul(side, card: card)) } label: {
+                                CardSwatch(card: card)
+                                    .frame(width: 26, height: 34)
+                                    .frame(width: 48, height: 48)
+                                    .contentShape(.rect)
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel(EventText.cardName(card))
+                        }
+                    }
+                } label: {
+                    Label { Text("Card") } icon: { Image(systemName: "rectangle.portrait.fill").foregroundStyle(.primary) }
+                }
+                row("Kickout", detail: "Their own kickout, won or lost", action: .kickout(side)) {
+                    Image(systemName: "arrow.up.forward")
+                }
+                row("Substitution", detail: "Who came off and who came on", action: .substitution(side)) {
+                    Image(systemName: "arrow.left.arrow.right")
+                }
+                row("Note", detail: "Anything worth remembering", action: .note(side)) {
+                    Image(systemName: "text.bubble")
+                }
             }
+            .disabled(!canRecord)
             .navigationTitle(teamName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -252,6 +282,23 @@ struct MoreSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
+    }
+
+    private func row(_ title: String, detail: String, action: MatchSession.Action,
+                     @ViewBuilder icon: () -> some View) -> some View {
+        Button { record(action) } label: {
+            LabeledContent {
+                Text(detail)
+            } label: {
+                Label { Text(title) } icon: { icon().foregroundStyle(.primary).frame(width: 26, height: 26) }
+            }
+        }
+        .tint(.primary)
+    }
+
+    private func record(_ action: MatchSession.Action) {
+        dismiss()
+        onRecord(action)
     }
 }

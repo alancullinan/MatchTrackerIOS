@@ -79,6 +79,8 @@ struct MatchScreen: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu("More Options", systemImage: "ellipsis") {
+                    Button("Add Note", systemImage: "text.bubble") { session.perform(.note(nil), at: .now) }
+                        .disabled(!match.canRecordEvents)
                     Button("Edit Match", systemImage: "pencil") { isEditing = true }
                     Section("Scorer Sheet") {
                         ForEach(TeamSide.allCases, id: \.self) { side in
@@ -95,13 +97,13 @@ struct MatchScreen: View {
             MatchFormView(editing: match)
         }
         .sheet(item: Binding(get: { moreFor.map(SheetTeam.init) }, set: { moreFor = $0?.side })) { item in
-            MoreSheet(teamName: EventText.teamName(match[item.side]), canRecord: match.canRecordEvents) {
-                session.perform(.miss(item.side), at: .now)
+            MoreSheet(teamName: EventText.teamName(match[item.side]), side: item.side, canRecord: match.canRecordEvents) {
+                session.perform($0, at: .now)
             }
         }
-        .sheet(item: Binding(get: { session.scorerSheetEvent.map(SheetEvent.init) },
-                             set: { session.scorerSheetEvent = $0?.eventID })) { item in
-            ScorerSheet(session: session, eventID: item.eventID)
+        .sheet(item: Binding(get: { session.detailsEvent.map(SheetEvent.init) },
+                             set: { session.detailsEvent = $0?.eventID })) { item in
+            EventDetailsSheet(session: session, eventID: item.eventID)
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: session.changeCount)
         .task(id: session.undoable) {
@@ -161,22 +163,39 @@ struct MatchScreen: View {
         let showsUndo = session.undoable != nil
         if case .periodStart(let period) = session.undoable {
             LastEventCard(title: "\(period.displayName) started", detail: "The clock is running",
-                          flag: nil, showsUndo: true) { session.undo() }
+                          icon: nil, showsUndo: true) { session.undo() }
         } else if let event = match.events.last {
             LastEventCard(title: EventText.title(event, in: match), detail: EventText.detail(event, in: match),
-                          flag: flag(for: event), showsUndo: showsUndo, onUndo: { session.undo() },
-                          onDetails: event.type == .shot ? { session.scorerSheetEvent = event.id } : nil)
+                          icon: icon(for: event), showsUndo: showsUndo, onUndo: { session.undo() },
+                          onDetails: hasDetails(event) ? { session.detailsEvent = event.id } : nil)
         }
     }
 
-    /// A filled flag for a score, an outline for a miss, none for anything else.
-    private func flag(for event: MatchEvent) -> LastEventCard.Flag? {
-        guard case .shot(_, _, let outcome, _) = event.kind else { return nil }
-        switch outcome {
-        case .goal: return .filled(MatchTheme.goal)
-        case .point: return .filled(MatchTheme.point)
-        case .twoPointer: return .filled(MatchTheme.twoPointer)
-        case .wide, .saved, .droppedShort, .offPost: return .outline
+    /// Whether the event has a details sheet to reopen.
+    private func hasDetails(_ event: MatchEvent) -> Bool {
+        switch event.kind {
+        case .shot, .foul, .kickout, .substitution, .note: true
+        case .card, .periodEnd: false
+        }
+    }
+
+    /// A flag for a shot (filled for a score, outlined for a miss), the card
+    /// for a foul with one, and a symbol for anything else.
+    private func icon(for event: MatchEvent) -> LastEventCard.Icon? {
+        switch event.kind {
+        case .shot(_, _, let outcome, _):
+            switch outcome {
+            case .goal: .flag(MatchTheme.goal)
+            case .point: .flag(MatchTheme.point)
+            case .twoPointer: .flag(MatchTheme.twoPointer)
+            case .wide, .saved, .droppedShort, .offPost: .missFlag
+            }
+        case .foul(_, _, _, let card?), .card(_, _, let card): .card(card)
+        case .foul: .symbol("hand.raised.fill")
+        case .kickout: .symbol("arrow.up.forward")
+        case .substitution: .symbol("arrow.left.arrow.right")
+        case .note: .symbol("text.bubble")
+        case .periodEnd: nil
         }
     }
 }
@@ -190,6 +209,13 @@ struct MatchScreen: View {
 
 #Preview("2nd half, running") {
     NavigationStack { MatchScreen(session: .preview(.secondHalf)) }
+}
+
+#Preview("Just after a card") {
+    let session = MatchSession.preview(.secondHalf)
+    session.perform(.foul(.team2, card: .black), at: .now)
+    session.detailsEvent = nil
+    return NavigationStack { MatchScreen(session: session) }
 }
 
 #Preview("Not started, no colours") {

@@ -42,7 +42,7 @@ MatchTracker/                   Xcode project folder
   MatchTracker/                 iOS app target sources (SwiftUI, SwiftData)
     Storage/                    SwiftData records (StoredMatch, StoredPanel) and the store
     Matches/                    the match list (the home screen), its rows, and sample matches for Previews
-    MatchScreen/                the match screen: `MatchSession` (applies, saves and undoes changes), theme, parts, `ScorerSheet`, `EventText`
+    MatchScreen/                the match screen: `MatchSession` (applies, saves and undoes changes), theme, parts, `ScorerSheet`, `EventSheets` (foul, kickout, substitution and note sheets, and their shared parts), `EventText`
     Teams/                      team colour badge and picker (`KitColor.color` lives here, not in MatchCore)
   MatchTrackerTests/            app tests (Swift Testing), run by CI
 MatchCore/                      local Swift package - the domain layer (linked as ../MatchCore)
@@ -72,6 +72,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | `MatchPeriods.swift` | `isPlaying`, `displayName`, `match.start/pause/endPeriod(at:)`, `match.record(_:note:at:)`, `canRecordEvents`, `nextPlayingPeriod` |
 | `MatchSteps.swift` | `MatchStep` and `nextStep` / `takeNextStep(at:)` (the main button), `undoLastEvent()`, `undoPeriodStart()`, `lastPeriodEnd`, `MatchClock.text(seconds:)`, `MatchEvent.minute` |
 | `ShotDetails.swift` | `ShotOutcome.alternatives(in:)`, `ShotType.options(for:)` (45 or 65), `match.updateShot(...)`, `match.deleteEvent(_:)`, `match.event(_:)` |
+| `EventDetails.swift` | `match.updateFoul/updateKickout/updateSubstitution/updateNote(...)`, `CardType.offered`, `CardType`/`FoulOutcome.displayName` |
 | `EventOrder.swift` | `eventsInOrder`, `eventsNewestFirst`, `score(_:through:)` (score at any event) |
 | `Score.swift` | `Score` (goals, points, two-pointers, total, "1-05"), `match.score(_:)`, `MatchType.allowsTwoPointers` |
 | `Stats.swift` | `match.stats(_:)` → `TeamStats`: shooting, per-player stats with score by shot type, fouls, cards, substitutions |
@@ -189,8 +190,12 @@ The agreed design, tried as a clickable mockup: https://claude.ai/artifact/VpABc
 - Scores are linked to the player, not a written name, so names added to a team sheet later appear on scores already recorded.
 
 **Other events**
-- **More** lists Miss, Foul, Card, Substitution, Kickout, Note and Team sheet.
+- **More** lists Miss, Foul, Card, Kickout, Substitution and Note (Team sheet comes with Phase 3). Each records at the tap, then opens its sheet; Undo and Details on the last-event card work for all of them.
 - **Miss** uses the same sheet as a score: Wide / Saved / Short / Post at the top, then how it was taken and the player.
+- **Foul**: Free / Penalty, a card chip (none, yellow, black, red) and who fouled; `side` is the team that conceded it. The Card row's three cards record a foul with that card in one tap.
+- **Kickout**: the team taking it; recorded as won, the sheet switches to lost (a lost kickout has no player).
+- **Substitution**: one team sheet; pick the player coming off, then it moves on to the player coming on. Picking the same player for both moves them across.
+- **Note**: a team's from More, the match's from the ••• menu. The text is saved however the sheet closes; Cancel or blank text deletes it.
 
 ## Commands
 

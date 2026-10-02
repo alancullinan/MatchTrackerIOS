@@ -12,90 +12,60 @@ struct ScorerSheet: View {
     @State private var outcome: ShotOutcome = .point
     @State private var type: ShotType = .fromPlay
     @State private var player: PlayerID?
-    @State private var note = ""
-    @State private var showsNote = false
+    @State private var note = NoteDraft()
     @State private var loaded = false
 
     private var match: Match { session.match }
 
-    /// The shot as recorded, with its team.
-    private var shot: (side: TeamSide, outcome: ShotOutcome)? {
-        guard case .shot(let side, _, let outcome, _) = match.event(eventID)?.kind else { return nil }
-        return (side, outcome)
-    }
-
     var body: some View {
-        NavigationStack {
-            if let shot {
-                content(side: shot.side, recorded: shot.outcome)
-            } else {
-                // Deleted elsewhere (e.g. undone) while the sheet was opening.
-                ContentUnavailableView("This shot is gone", systemImage: "flag.slash")
-            }
+        if case .shot(let side, _, let recorded, _) = match.event(eventID)?.kind {
+            content(side: side, recorded: recorded)
+                .onAppear(perform: load)
+        } else {
+            // Deleted elsewhere (e.g. undone) while the sheet was opening.
+            EventGoneView()
         }
-        .presentationDragIndicator(.visible)
-        .onAppear(perform: load)
     }
 
     private func content(side: TeamSide, recorded: ShotOutcome) -> some View {
         let team = match[side]
         let outcomes = recorded.alternatives(in: match.matchType)
-        return ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if outcomes.count > 1 {
-                    Picker("Outcome", selection: $outcome) {
-                        ForEach(outcomes, id: \.self) { Text($0.displayName).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .controlSize(.large)
-                }
-
-                ShotTypeChips(options: ShotType.options(for: match.matchType), selection: $type)
-
-                Text(recorded.scores ? "Scorer" : "Player")
-                    .font(.footnote.weight(.bold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(.secondary)
-                TeamSheetPicker(team: team, selection: $player)
-
-                if showsNote {
-                    TextField("Anything worth remembering", text: $note, axis: .vertical)
-                        .lineLimit(2...5)
-                        .padding(10)
-                        .background(.fill.tertiary, in: .rect(cornerRadius: 12))
-                } else {
-                    Button("Add Note", systemImage: "text.bubble") { showsNote = true }
-                }
-
-                if recorded.scores {
-                    Button("Stop asking for \(EventText.teamName(team)) scorers") {
-                        session.setAsksForScorers(false, for: side)
-                        dismiss()
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 4)
-                }
+        return EventSheetLayout(
+            title: EventText.teamName(team),
+            undoTitle: "Undo \(recorded.displayName.lowercased())",
+            onUndo: {
+                session.deleteEvent(eventID)
+                dismiss()
+            },
+            onDone: {
+                session.updateShot(eventID, outcome: outcome, type: type, player: player,
+                                   note: note.text(keeping: match.event(eventID)?.note))
+                dismiss()
             }
-            .padding(16)
-        }
-        .navigationTitle(EventText.teamName(team))
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Undo \(recorded.displayName.lowercased())", role: .destructive) {
-                    session.deleteEvent(eventID)
+        ) {
+            if outcomes.count > 1 {
+                Picker("Outcome", selection: $outcome) {
+                    ForEach(outcomes, id: \.self) { Text($0.displayName).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .controlSize(.large)
+            }
+
+            ChoiceChips(options: ShotType.options(for: match.matchType), selection: $type) { Text($0.displayName) }
+
+            SheetLabel(recorded.scores ? "Scorer" : "Player")
+            TeamSheetPicker(team: team, selection: $player)
+            NoteField(draft: $note)
+
+            if recorded.scores {
+                Button("Stop asking for \(EventText.teamName(team)) scorers") {
+                    session.setAsksForScorers(false, for: side)
                     dismiss()
                 }
-                .tint(.red)
-            }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done", role: .confirm) {
-                    session.updateShot(eventID, outcome: outcome, type: type, player: player,
-                                       note: showsNote ? note : match.event(eventID)?.note)
-                    dismiss()
-                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 4)
             }
         }
     }
@@ -107,43 +77,18 @@ struct ScorerSheet: View {
         self.outcome = outcome
         self.type = type
         self.player = player
-        note = event.note ?? ""
-        showsNote = event.note != nil
-    }
-}
-
-/// How the shot was taken, as chips: From play, Free, 45 or 65, Penalty, Mark, Sideline.
-struct ShotTypeChips: View {
-    let options: [ShotType]
-    @Binding var selection: ShotType
-
-    var body: some View {
-        FlowLayout(spacing: 8) {
-            ForEach(options, id: \.self) { option in
-                let selected = option == selection
-                Button { selection = option } label: {
-                    Text(option.displayName)
-                        .font(MatchTheme.display(18))
-                        .padding(.horizontal, 14)
-                        .frame(minHeight: 44)
-                        .foregroundStyle(selected ? MatchTheme.goldInk : .primary)
-                        .background(selected ? AnyShapeStyle(MatchTheme.gold) : AnyShapeStyle(.fill.tertiary),
-                                    in: .rect(cornerRadius: 12))
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            }
-        }
-        .sensoryFeedback(.selection, trigger: selection)
+        note.load(event.note)
     }
 }
 
 /// A team sheet laid out like the pitch, forwards at the top down to the
 /// goalkeeper, with subs 16-30 below. Tapping a player highlights them; tapping
-/// them again clears it.
+/// them again clears it. A `marked` player (e.g. the one coming off, while the
+/// one coming on is picked) is outlined.
 struct TeamSheetPicker: View {
     let team: Team
     @Binding var selection: PlayerID?
+    var marked: PlayerID?
 
     /// Jersey numbers by line, from full forwards to goalkeeper.
     static let lines: [[Int]] = [[13, 14, 15], [10, 11, 12], [8, 9], [5, 6, 7], [2, 3, 4], [1]]
@@ -205,6 +150,11 @@ struct TeamSheetPicker: View {
                 .foregroundStyle(selected ? MatchTheme.goldInk : .primary)
                 .background(selected ? AnyShapeStyle(MatchTheme.gold) : AnyShapeStyle(.background.secondary),
                             in: .rect(cornerRadius: 12))
+                .overlay {
+                    if player.id == marked {
+                        RoundedRectangle(cornerRadius: 12).strokeBorder(MatchTheme.gold, style: StrokeStyle(lineWidth: 2, dash: [5, 3]))
+                    }
+                }
             }
             .buttonStyle(.plain)
             .accessibilityLabel(EventText.playerName(player))
