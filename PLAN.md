@@ -26,6 +26,7 @@ A native SwiftUI iOS app for tracking Gaelic games matches, succeeding the owner
 | Scorer sheet for each team | Opens for both teams by default, with a per-team switch to stop asking | The owner knows home names but often only opposition numbers; names can be added to the team sheet later and show on earlier scores |
 | Misses | Under More with fouls, cards and subs; same sheet as a score (Wide / Saved / Short / Post) | A miss is an event like the others and needs the player and shot type, so no separate button or hidden press-and-hold |
 | Team colours | A fixed palette (`KitColor`, 12 colours) with a main and an optional second colour per team, stored with the match | Covers the county and club colours with one tap each, and we control how each looks so all read in sunlight; arbitrary colours would need a colour wheel and could be unreadable. A colour is only a case name, so the palette can grow |
+| Undo on the match screen | Undo covers the last event, ending a period (back into it, paused at its time) and starting one (back to the break, while nothing is recorded in it). It shows for 6 seconds after each change | A mistaken tap on the big button is the likeliest error on a sideline; undo keeps it one tap to fix without a confirmation on every period change |
 | Main tool | Claude Code in Terminal; Xcode for Previews, the Simulator and devices | Claude Code reads `CLAUDE.md` automatically, handles git and PRs, and runs builds and tests; GitHub is the shared record for every session |
 
 ## Workflow
@@ -69,7 +70,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] Home and match list with filter (the match list is the home screen)
 - [x] Match create/edit form (teams, code, competition, date, venue, referee; no period lengths). Both teams must be named; the code can't change once the match has started
 - [x] Team colours: chosen per team in the match form (needed by the match screen's tinted team cards). A fixed palette of 12 kit colours; a main colour and an optional second
-- [ ] Match details: scoreboard, wall-clock timer, period transitions
+- [x] Match details: scoreboard, wall-clock timer, period transitions. The match screen to the agreed design; goal and point flags record a score straight away; Undo for the last event, a period end or a period start
 - [ ] Score entry (goal, point, two-pointer, misses, shot types)
 - [ ] Foul/card, kickout, substitution and note entry
 - [ ] Events list with edit/delete

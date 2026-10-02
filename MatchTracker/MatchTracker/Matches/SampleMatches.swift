@@ -65,6 +65,38 @@ enum SampleMatches {
         unreadable.clockPeriod = "penaltyShootout"
     }
 
+    /// States the match screen can be in, for its Previews.
+    enum ScreenState { case notStarted, secondHalf, halfTime, fullTimeAfterExtraTime }
+
+    /// A match for the match screen in `state`, as of `now`.
+    static func screen(_ state: ScreenState, now: Date = .now) -> Match {
+        var match = Match.new(matchType: .football, team1Name: "Commercials", team2Name: "Brian Borus",
+                              competition: "U16 A Championship Final", date: now)
+        match.team1.colors = TeamColors(.blue, .white)
+        match.team2.colors = TeamColors(.red, .white)
+        match.team1.players[13].name = "Aoife Casey"
+        switch state {
+        case .notStarted:
+            match.team1.colors = nil
+            match.team2.colors = nil
+        case .secondHalf:
+            match.start(at: now.addingTimeInterval(-3600))
+            match.record(shot(.team1, .goal), at: now.addingTimeInterval(-3400))
+            match.record(shot(.team2, .point), at: now.addingTimeInterval(-3000))
+            match.endPeriod(at: now.addingTimeInterval(-1700))
+            match.start(at: now.addingTimeInterval(-1394))
+            match.record(.shot(side: .team1, player: match.team1.players[13].id, outcome: .point, type: .free),
+                         at: now.addingTimeInterval(-60))
+        case .halfTime:
+            match.start(at: now.addingTimeInterval(-2400))
+            match.record(shot(.team2, .goal), at: now.addingTimeInterval(-2000))
+            match.endPeriod(at: now.addingTimeInterval(-500))
+        case .fullTimeAfterExtraTime:
+            play(&match, from: now.addingTimeInterval(-9000), team1: [.goal, .point, .point], team2: [.goal, .twoPointer], extraTime: true)
+        }
+        return match
+    }
+
     private static func shot(_ side: TeamSide, _ outcome: ShotOutcome) -> MatchEvent.Kind {
         .shot(side: side, player: nil, outcome: outcome, type: .fromPlay)
     }

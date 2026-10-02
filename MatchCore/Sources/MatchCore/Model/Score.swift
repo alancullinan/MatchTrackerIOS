@@ -59,3 +59,18 @@ extension MatchType {
         }
     }
 }
+
+extension ShotOutcome {
+    /// The name to show.
+    public var displayName: String {
+        switch self {
+        case .goal: "Goal"
+        case .point: "Point"
+        case .twoPointer: "2-Pointer"
+        case .wide: "Wide"
+        case .saved: "Saved"
+        case .droppedShort: "Short"
+        case .offPost: "Post"
+        }
+    }
+}
