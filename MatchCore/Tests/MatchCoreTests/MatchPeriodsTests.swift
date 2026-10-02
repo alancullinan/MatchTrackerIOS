@@ -60,7 +60,7 @@ private let point = MatchEvent.Kind.shot(side: .team1, player: nil, outcome: .po
     #expect(ended)
 
     // Match Over keeps the final time on the clock.
-    #expect(match.clock == MatchClock(period: .matchOver, bankedSeconds: 610))
+    #expect(match.clock == MatchClock(period: .fullTimeAfterExtraTime, bankedSeconds: 610))
     #expect(match.events.map(\.period) == [.firstHalf, .secondHalf, .extraTimeFirstHalf, .extraTimeSecondHalf])
     let started2 = match.start(at: at(1400))
     #expect(!started2)

@@ -1,18 +1,20 @@
 import Foundation
 
-// Raw values are the PWA's exact strings (script.js), so exports round-trip.
+// The app's own enums. They are stored by case name, so a case name is
+// permanent once matches are saved: add cases, never rename one. Names shown
+// to people come from `displayName`, not from these names.
 
 /// Match periods, declared in play order: `allCases` is the order periods are played in.
 public enum MatchPeriod: String, Codable, Sendable, CaseIterable {
-    case notStarted = "Not Started"
-    case firstHalf = "1st Half"
-    case halfTime = "Half Time"
-    case secondHalf = "2nd Half"
-    case fullTime = "Full Time"
-    case extraTimeFirstHalf = "Extra Time 1st Half"
-    case extraTimeHalfTime = "Extra Time Half Time"
-    case extraTimeSecondHalf = "Extra Time 2nd Half"
-    case matchOver = "Match Over"
+    case notStarted
+    case firstHalf
+    case halfTime
+    case secondHalf
+    case fullTime
+    case extraTimeFirstHalf
+    case extraTimeHalfTime
+    case extraTimeSecondHalf
+    case fullTimeAfterExtraTime
 }
 
 public enum MatchType: String, Codable, Sendable, CaseIterable {
@@ -27,7 +29,7 @@ public enum EventType: String, Codable, Sendable, CaseIterable {
     case substitution
     case kickout
     case card
-    case foulConceded
+    case foul
     case note
     case periodEnd
 }

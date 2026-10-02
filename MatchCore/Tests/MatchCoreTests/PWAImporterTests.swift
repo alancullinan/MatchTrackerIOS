@@ -153,7 +153,7 @@ private func oneMatch(events: String = "[]", extra: String = "", panels: String 
         events: #"[{"id":1,"type":"periodEnd","period":"Extra Time Half Time","timeElapsed":600}]"#,
         extra: #","currentPeriod":"Match Over""#
     ))
-    #expect(extraTime.matches[0].clock.period == .matchOver)
+    #expect(extraTime.matches[0].clock.period == .fullTimeAfterExtraTime)
 }
 
 @Test func aPeriodEndIntoAPlayingPeriodIsAnError() throws {

@@ -54,8 +54,8 @@ private let substitute = PlayerID()
 private let everyKind: [(MatchEvent.Kind, TeamSide?, EventType)] = [
     (.shot(side: .team1, player: player, outcome: .twoPointer, type: .free), .team1, .shot),
     (.shot(side: .team2, player: nil, outcome: .wide, type: .fromPlay), .team2, .shot),
-    (.foul(side: .team2, player: player, outcome: .penalty, card: .black), .team2, .foulConceded),
-    (.foul(side: .team1, player: nil, outcome: .free, card: nil), .team1, .foulConceded),
+    (.foul(side: .team2, player: player, outcome: .penalty, card: .black), .team2, .foul),
+    (.foul(side: .team1, player: nil, outcome: .free, card: nil), .team1, .foul),
     (.card(side: .team1, player: player, card: .red), .team1, .card),
     (.kickout(side: .team2, player: nil, won: true), .team2, .kickout),
     (.substitution(side: .team1, off: player, on: substitute), .team1, .substitution),
