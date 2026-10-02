@@ -41,6 +41,7 @@ MatchTracker/                   Xcode project folder
   MatchTracker/                 iOS app target sources (SwiftUI, SwiftData)
     Storage/                    SwiftData records (StoredMatch, StoredPanel) and the store
     Matches/                    the match list (the home screen), its rows, and sample matches for Previews
+    Teams/                      team colour badge and picker (`KitColor.color` lives here, not in MatchCore)
   MatchTrackerTests/            app tests (Swift Testing), run by CI
 MatchCore/                      local Swift package - the domain layer (linked as ../MatchCore)
   Package.swift
@@ -62,7 +63,8 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | --- | --- |
 | `Match.swift` | `Match` (teams, events, clock, `legacyID`, `liveShareID`), `Match.new(...)`, `match[.team1]` |
 | `MatchDetails.swift` | `MatchDetails` (what the match form edits), `Match.new(details)`, `match.apply(_:)`, `canChangeMatchType`, `MatchType.displayName` |
-| `Team.swift`, `Player.swift`, `TeamSide.swift` | 30-player rosters (`Team.roster`), optional names, `.team1` / `.team2` |
+| `Team.swift`, `Player.swift`, `TeamSide.swift` | 30-player rosters (`Team.roster`), optional names, `Team.colors`, `.team1` / `.team2` |
+| `TeamColors.swift` | `KitColor` (the palette, stored by case name) and `TeamColors` (main + optional second colour) |
 | `MatchEvent.swift` | `MatchEvent` and its `Kind` (shot, foul, card, kickout, substitution, note, periodEnd); `side` and `type` |
 | `MatchClock.swift` | Wall-clock timer: `elapsed(at:)`, `start(at:)`, `pause(at:)` |
 | `MatchPeriods.swift` | `isPlaying`, `displayName`, `match.start/pause/endPeriod(at:)`, `match.record(_:note:at:)`, `canRecordEvents`, `nextPlayingPeriod` |

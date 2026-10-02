@@ -31,17 +31,23 @@ struct MatchFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Teams") {
-                    TextField("Team 1", text: $details.team1Name)
+                Section("Team 1") {
+                    TextField("Name", text: $details.team1Name)
                         .focused($focusedField, equals: .team1)
                         .submitLabel(.next)
                         .onSubmit { focusedField = .team2 }
-                    TextField("Team 2", text: $details.team2Name)
+                        .textInputAutocapitalization(.words)
+                    colorsRow(teamName: details.team1Name, colors: $details.team1Colors)
+                }
+
+                Section("Team 2") {
+                    TextField("Name", text: $details.team2Name)
                         .focused($focusedField, equals: .team2)
                         .submitLabel(.next)
                         .onSubmit { focusedField = .competition }
+                        .textInputAutocapitalization(.words)
+                    colorsRow(teamName: details.team2Name, colors: $details.team2Colors)
                 }
-                .textInputAutocapitalization(.words)
 
                 Section {
                     Picker("Code", selection: $details.matchType) {
@@ -105,11 +111,28 @@ struct MatchFormView: View {
         }
     }
 
+    private func colorsRow(teamName: String, colors: Binding<TeamColors?>) -> some View {
+        NavigationLink {
+            TeamColorsPicker(teamName: teamName.trimmingCharacters(in: .whitespaces), colors: colors)
+        } label: {
+            LabeledContent("Colours") {
+                if let chosen = colors.wrappedValue {
+                    HStack(spacing: 8) {
+                        Text(chosen.displayName)
+                        TeamColorBadge(colors: chosen, size: 18)
+                    }
+                } else {
+                    Text("None")
+                }
+            }
+        }
+    }
+
     private var hasChanges: Bool {
         if let editing { return details != editing.details }
         let typed = details.trimmed
         return [typed.team1Name, typed.team2Name, typed.competition, typed.venue, typed.referee]
-            .contains { !$0.isEmpty }
+            .contains { !$0.isEmpty } || details.team1Colors != nil || details.team2Colors != nil
     }
 
     private func save() {
@@ -132,6 +155,8 @@ struct MatchFormView: View {
 #Preview("Editing a started match", traits: .emptyStore) {
     var match = Match.new(matchType: .football, team1Name: "Na Fianna", team2Name: "St. Vincent's",
                           competition: "Senior Football League", date: .now, venue: "Mobhi Road")
+    match.team1.colors = TeamColors(.green, .white)
+    match.team2.colors = TeamColors(.blue, .white)
     match.start(at: .now)
     return MatchFormView(editing: match)
 }

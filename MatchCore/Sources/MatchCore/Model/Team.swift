@@ -4,12 +4,15 @@ public struct Team: Hashable, Sendable, Codable {
 
     public var name: String
     public var players: [Player]
+    /// `nil` until colours are chosen for the team.
+    public var colors: TeamColors?
     /// The panel last imported into this team, offered first next time.
     public var lastPanelID: PanelID?
 
-    public init(name: String, players: [Player], lastPanelID: PanelID? = nil) {
+    public init(name: String, players: [Player], colors: TeamColors? = nil, lastPanelID: PanelID? = nil) {
         self.name = name
         self.players = players
+        self.colors = colors
         self.lastPanelID = lastPanelID
     }
 

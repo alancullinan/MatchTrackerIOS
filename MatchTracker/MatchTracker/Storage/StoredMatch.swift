@@ -33,6 +33,11 @@ final class StoredMatch {
     var team2Players: Data = Data()
     var team1LastPanelID: UUID?
     var team2LastPanelID: UUID?
+    /// `KitColor` case names; no primary means no colours chosen.
+    var team1PrimaryColor: String?
+    var team1SecondaryColor: String?
+    var team2PrimaryColor: String?
+    var team2SecondaryColor: String?
 
     /// `[MatchEvent]` as JSON, in recorded order.
     var events: Data = Data()
@@ -67,6 +72,10 @@ final class StoredMatch {
         set(\.team2Players, team2Players)
         set(\.team1LastPanelID, match.team1.lastPanelID?.uuid)
         set(\.team2LastPanelID, match.team2.lastPanelID?.uuid)
+        set(\.team1PrimaryColor, match.team1.colors?.primary.rawValue)
+        set(\.team1SecondaryColor, match.team1.colors?.secondary?.rawValue)
+        set(\.team2PrimaryColor, match.team2.colors?.primary.rawValue)
+        set(\.team2SecondaryColor, match.team2.colors?.secondary?.rawValue)
         set(\.events, events)
         set(\.clockPeriod, match.clock.period.rawValue)
         set(\.clockBankedSeconds, match.clock.bankedSeconds)
@@ -87,11 +96,13 @@ final class StoredMatch {
             team1: Team(
                 name: team1Name,
                 players: try StoredCoding.decode([Player].self, team1Players, field: "team1Players"),
+                colors: try Self.colors(team1PrimaryColor, team1SecondaryColor, field: "team1"),
                 lastPanelID: team1LastPanelID.map(PanelID.init)
             ),
             team2: Team(
                 name: team2Name,
                 players: try StoredCoding.decode([Player].self, team2Players, field: "team2Players"),
+                colors: try Self.colors(team2PrimaryColor, team2SecondaryColor, field: "team2"),
                 lastPanelID: team2LastPanelID.map(PanelID.init)
             ),
             events: try StoredCoding.decode([MatchEvent].self, events, field: "events"),
@@ -101,6 +112,14 @@ final class StoredMatch {
                 runningSince: clockRunningSince
             ),
             liveShareID: liveShareID
+        )
+    }
+
+    private static func colors(_ primary: String?, _ secondary: String?, field: String) throws -> TeamColors? {
+        guard let primary else { return nil }
+        return TeamColors(
+            try StoredCoding.enumCase(KitColor.self, primary, field: "\(field)PrimaryColor"),
+            try secondary.map { try StoredCoding.enumCase(KitColor.self, $0, field: "\(field)SecondaryColor") }
         )
     }
 

@@ -10,10 +10,12 @@ struct MatchRow: View {
         // Team names are stored columns, so even a match that can't be read
         // still shows which match it is.
         let match = try? stored.match()
+        // If either team has colours, both names leave room for a badge so they line up.
+        let showsBadges = match?.team1.colors != nil || match?.team2.colors != nil
 
         VStack(alignment: .leading, spacing: 6) {
-            team(stored.team1Name, score: match?.score(.team1))
-            team(stored.team2Name, score: match?.score(.team2))
+            team(stored.team1Name, colors: match?.team1.colors, showsBadge: showsBadges, score: match?.score(.team1))
+            team(stored.team2Name, colors: match?.team2.colors, showsBadge: showsBadges, score: match?.score(.team2))
 
             if let match {
                 details(for: match)
@@ -27,8 +29,18 @@ struct MatchRow: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func team(_ name: String, score: Score?) -> some View {
+    private func team(_ name: String, colors: TeamColors?, showsBadge: Bool, score: Score?) -> some View {
         HStack(alignment: .firstTextBaseline) {
+            if showsBadge {
+                Group {
+                    if let colors {
+                        TeamColorBadge(colors: colors)
+                    } else {
+                        Color.clear.frame(width: 14, height: 14)
+                    }
+                }
+                .alignmentGuide(.firstTextBaseline) { $0[.bottom] - 2 }
+            }
             Text(name.isEmpty ? "Unnamed team" : name)
                 .font(.headline)
                 .lineLimit(2)
