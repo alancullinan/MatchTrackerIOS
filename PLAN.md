@@ -4,18 +4,21 @@ A native SwiftUI iOS app for tracking Gaelic games matches, succeeding the owner
 
 ## Decisions
 
-| Decision | Choice |
-| --- | --- |
-| Approach | Native SwiftUI rewrite (not a web-view wrapper) |
-| Minimum iOS | 17 |
-| Persistence | SwiftData, synced to each user's private iCloud database (CloudKit) |
-| Domain logic | `MatchCore` local Swift package, Foundation only |
-| Data model | Native Swift model; anything PWA-specific stays inside the isolated importer |
-| Migrating PWA data | Optional one-time import of the owner's own matches; low priority |
-| Sharing a match | Later. Approach undecided: CloudKit sharing, or a read-only link like live sharing |
-| Live sharing | Later. Approach undecided; the PWA's Firebase viewer (`live.html`) is one option, not a requirement |
-| v1 extras | Live Activity, haptics, keep screen awake |
-| Two-pointers | Football and Ladies Football |
+| Decision | Choice | Why |
+| --- | --- | --- |
+| Approach | Native SwiftUI rewrite (not a web-view wrapper) | A wrapper keeps WebKit's storage limits and web quirks, can't easily use iOS features (Live Activities, widgets, Watch, haptics), and risks App Store rejection as "just a website" |
+| Minimum iOS | 17 | Needed for SwiftData and `@Observable`, while still running on older phones; Xcode's default (26.2) would have left those out |
+| Persistence | SwiftData, synced to each user's private iCloud database (CloudKit) | One store avoids the PWA's data-loss bug (two stores out of step). iCloud syncs across devices and survives a lost phone, with no server, account system or cost, and works offline on the sideline |
+| Paid developer account | Not until Phase 4 (iCloud) | A free Apple ID covers building and running on the Simulator and your own phone; the paid account is only needed for iCloud, TestFlight and the App Store |
+| Domain logic | `MatchCore` local Swift package, Foundation only | Logic can be tested in seconds without the Simulator, builds and tests on Linux so cloud sessions can run the tests, and can be reused by a Watch app, widgets and Live Activities |
+| Data model | Native Swift model; anything PWA-specific stays inside the isolated importer | Designed so invalid states can't exist (each event type carries only its own data); the PWA was never released, so it isn't worth bending the model for it |
+| Migrating PWA data | Optional one-time import of the owner's own matches; low priority | Only the owner ever used the PWA |
+| Periods | No set length; any match can go to extra time; no step to finish a match | The clock runs until a period is ended, and extra time depends on the score on the day. Full Time is the end unless extra time is started, so a separate "finish" would only be an extra tap |
+| Sharing a match | Later. Approach undecided: CloudKit sharing, or a read-only link like live sharing | Not needed yet; matches are kept self-contained so it stays possible |
+| Live sharing | Later. Approach undecided; the PWA's Firebase viewer (`live.html`) is one option, not a requirement | Not needed for v1; to be decided on its own merits rather than for PWA compatibility |
+| v1 extras | Live Activity, haptics, keep screen awake | The biggest gains on the sideline for little work: score and clock on the Lock Screen, confirmation without looking, and no screen locking mid-match. Widgets, Watch, Siri and iPad wait for v1.1 |
+| Two-pointers | Football and Ladies Football | Confirmed by the owner: both codes have the two-point score; Hurling and Camogie don't |
+| Main tool | Claude Code in Terminal; Xcode for Previews, the Simulator and devices | Claude Code reads `CLAUDE.md` automatically, handles git and PRs, and runs builds and tests; GitHub is the shared record for every session |
 
 ## Workflow
 
