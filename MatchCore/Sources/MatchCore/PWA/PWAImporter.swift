@@ -108,12 +108,15 @@ public enum PWAImporter {
         }
 
         // The PWA's running time is now - periodStartTimestamp; a paused clock keeps it in elapsedTime.
-        var clock = MatchClock(period: pwa.currentPeriod, bankedSeconds: pwa.elapsedTime)
+        // Match Over without extra time is plain Full Time here: .matchOver means after extra time.
+        let period = pwa.currentPeriod == .matchOver && !wentToExtraTime ? .fullTime : pwa.currentPeriod
+        var clock = MatchClock(period: period, bankedSeconds: pwa.elapsedTime)
         if !pwa.isPaused, let start = pwa.periodStartTimestamp {
             clock.bankedSeconds = 0
             clock.runningSince = Date(timeIntervalSince1970: Double(start) / 1000)
         }
 
+        // halfLength and extraHalfLength are ignored: periods have no set length.
         return Match(
             legacyID: pwa.id,
             matchType: pwa.matchType,
@@ -121,8 +124,6 @@ public enum PWAImporter {
             date: try date(of: pwa, timeZone: timeZone),
             venue: pwa.venue,
             referee: pwa.referee,
-            halfLength: pwa.halfLength,
-            extraHalfLength: pwa.extraHalfLength,
             team1: team1,
             team2: team2,
             events: events,

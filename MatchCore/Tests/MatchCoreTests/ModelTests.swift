@@ -129,8 +129,6 @@ private let everyKind: [(MatchEvent.Kind, TeamSide?, EventType)] = [
     #expect(match.clock == MatchClock())
     #expect(match.events.isEmpty)
     #expect(match.legacyID == nil)
-    #expect(match.halfLength == 30)
-    #expect(match.extraHalfLength == 10)
     #expect(match[.team1].name == "Team A")
     #expect(match[.team2].players.count == 30)
 }

@@ -15,7 +15,7 @@ private func backup(_ json: String) throws -> PWABackup {
 /// A one-match backup. Team ids are "a" and "b"; players are "a1"/"a2" and "b1".
 private func oneMatch(events: String = "[]", extra: String = "", panels: String = "[]", lastSelected: String = "{}") throws -> PWABackup {
     try backup("""
-        {"matches":[{"id":"1754435709770-961121","dateTime":"2025-08-10","matchType":"football","extraHalfLength":10\(extra),
+        {"matches":[{"id":"1754435709770-961121","dateTime":"2025-08-10","matchType":"football"\(extra),
           "team1":{"id":"a","name":"Team A","players":[{"id":"a1","name":"No.1","jerseyNumber":1},{"id":"a2","name":" Seán ","jerseyNumber":2}]},
           "team2":{"id":"b","name":"Team B","players":[{"id":"b1","name":"No.1","jerseyNumber":1}]},
           "events":\(events)}],
@@ -142,6 +142,20 @@ private func oneMatch(events: String = "[]", extra: String = "", panels: String 
     #expect(result.warnings.count == 1)
 }
 
+@Test func aMatchLeftAtMatchOverIsFullTimeUnlessItWentToExtraTime() throws {
+    let noExtraTime = try PWAImporter.convert(oneMatch(
+        events: #"[{"id":1,"type":"periodEnd","period":"Full Time","timeElapsed":2000}]"#,
+        extra: #","currentPeriod":"Match Over""#
+    ))
+    #expect(noExtraTime.matches[0].clock.period == .fullTime)
+
+    let extraTime = try PWAImporter.convert(oneMatch(
+        events: #"[{"id":1,"type":"periodEnd","period":"Extra Time Half Time","timeElapsed":600}]"#,
+        extra: #","currentPeriod":"Match Over""#
+    ))
+    #expect(extraTime.matches[0].clock.period == .matchOver)
+}
+
 @Test func aPeriodEndIntoAPlayingPeriodIsAnError() throws {
     #expect(throws: PWAImportError.unexpectedPeriodEnd(matchID: "1754435709770-961121", eventID: "7", period: .secondHalf)) {
         try PWAImporter.convert(oneMatch(events: #"[{"id":7,"type":"periodEnd","period":"2nd Half","timeElapsed":0}]"#))
@@ -186,12 +200,10 @@ private func oneMatch(events: String = "[]", extra: String = "", panels: String 
 }
 
 @Test func otherMatchFieldsCarryOver() throws {
-    let match = try #require(try PWAImporter.convert(oneMatch(extra: #","competition":"Junior C","venue":"Venue 1","referee":"Referee 1","halfLength":35,"shareId":"abc","isBroadcasting":true"#)).matches.first)
+    let match = try #require(try PWAImporter.convert(oneMatch(extra: #","competition":"Junior C","venue":"Venue 1","referee":"Referee 1","shareId":"abc","isBroadcasting":true"#)).matches.first)
     #expect(match.legacyID == "1754435709770-961121")
     #expect(match.matchType == .football)
     #expect([match.competition, match.venue, match.referee] == ["Junior C", "Venue 1", "Referee 1"])
-    #expect(match.halfLength == 35)
-    #expect(match.extraHalfLength == 10)
     #expect(match.liveShareID == "abc")
 }
 
