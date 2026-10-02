@@ -31,6 +31,8 @@ struct ScorerSheet: View {
         let team = match[side]
         let outcomes = recorded.alternatives(in: match.matchType)
         return EventSheetLayout(
+            session: session,
+            eventID: eventID,
             title: EventText.teamName(team),
             undoTitle: "Undo \(recorded.displayName.lowercased())",
             onUndo: {

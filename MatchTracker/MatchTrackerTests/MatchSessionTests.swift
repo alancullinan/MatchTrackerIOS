@@ -244,4 +244,24 @@ struct MatchSessionTests {
         #expect(session.match.events.isEmpty)
         #expect(session.detailsEvent == nil)
     }
+
+    // MARK: - Times
+
+    @Test func anEventsTimeCanBeCorrected() throws {
+        session.perform(.nextStep, at: at(0))
+        session.perform(.score(.team1, .point), at: at(600))
+        let id = try #require(session.match.events.last?.id)
+
+        let moved = session.updateTime(id, period: .firstHalf, time: 480)
+        #expect(moved)
+        #expect(try stored().event(id)?.time == 480)
+    }
+
+    @Test func theClockCanBeMovedOnAndIsSaved() throws {
+        session.perform(.nextStep, at: at(0))
+        let adjusted = session.adjustClock(by: 120, at: at(60))
+        #expect(adjusted)
+        #expect(try stored().clock.elapsed(at: at(60)) == 180)
+        #expect(session.match.clock.isRunning)
+    }
 }

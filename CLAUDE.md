@@ -42,7 +42,7 @@ MatchTracker/                   Xcode project folder
   MatchTracker/                 iOS app target sources (SwiftUI, SwiftData)
     Storage/                    SwiftData records (StoredMatch, StoredPanel) and the store
     Matches/                    the match list (the home screen), its rows, and sample matches for Previews
-    MatchScreen/                the match screen: `MatchSession` (applies, saves and undoes changes), theme, parts, `ScorerSheet`, `EventSheets` (foul, kickout, substitution and note sheets, and their shared parts), `EventText`
+    MatchScreen/                the match screen: `MatchSession` (applies, saves and undoes changes), theme, parts, `ScorerSheet`, `EventSheets` (foul, kickout, substitution and note sheets, and their shared parts, including the "When" time field), `EventListView` (+ `EventList`, its sections), `ClockEditor`, `EventText`
     Teams/                      team colour badge and picker (`KitColor.color` lives here, not in MatchCore)
   MatchTrackerTests/            app tests (Swift Testing), run by CI
 MatchCore/                      local Swift package - the domain layer (linked as ../MatchCore)
@@ -73,6 +73,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | `MatchSteps.swift` | `MatchStep` and `nextStep` / `takeNextStep(at:)` (the main button), `undoLastEvent()`, `undoPeriodStart()`, `lastPeriodEnd`, `MatchClock.text(seconds:)`, `MatchEvent.minute` |
 | `ShotDetails.swift` | `ShotOutcome.alternatives(in:)`, `ShotType.options(for:)` (45 or 65), `match.updateShot(...)`, `match.deleteEvent(_:)`, `match.event(_:)` |
 | `EventDetails.swift` | `match.updateFoul/updateKickout/updateSubstitution/updateNote(...)`, `CardType.options(for:)` (no black card in ladies football or camogie), `CardType`/`FoulOutcome.displayName` |
+| `TimeEditing.swift` | `match.adjustClock(by:at:)`, `playedPeriods`, `timeLimits(for:in:)`, `updateTime(_:period:time:)`, `Match.maxEventTime` |
 | `EventOrder.swift` | `eventsInOrder`, `eventsNewestFirst`, `score(_:through:)` (score at any event) |
 | `Score.swift` | `Score` (goals, points, two-pointers, total, "1-05"), `match.score(_:)`, `MatchType.allowsTwoPointers` |
 | `Stats.swift` | `match.stats(_:)` → `TeamStats`: shooting, per-player stats with score by shot type, fouls, cards, substitutions |
@@ -196,6 +197,8 @@ The agreed design, tried as a clickable mockup: https://claude.ai/artifact/VpABc
 - **Foul**: Free / Penalty, a card chip (none, yellow, black, red) and who fouled; `side` is the team that conceded it. A card is always part of a foul, so there is no separate Card entry.
 - **Kickout**: the team taking it; recorded as won, the sheet switches to lost (a lost kickout has no player).
 - **Substitution**: one team sheet; pick the player coming off, then it moves on to the player coming on. Picking the same player for both moves them across.
+- **Events list**: from the toolbar or by tapping the last-event card. Newest first, by period; tap an event for its sheet, swipe to delete (not a period end).
+- **Times**: every event's sheet has a collapsed "When" to change its period and time. Tapping the clock adjusts it; the period only changes through the main button.
 - **Note**: a team's from More, the match's from the ••• menu. The text is saved however the sheet closes; Cancel or blank text deletes it.
 
 ## Commands
