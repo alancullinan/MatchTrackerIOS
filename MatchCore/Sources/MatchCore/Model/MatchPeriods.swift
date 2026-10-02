@@ -30,17 +30,16 @@ extension MatchPeriod {
 /// doesn't apply (it returns `false`), so a double-tap or a stale button can't
 /// skip a period or record a second period end.
 extension Match {
-    /// Extra time is played only if the match has extra-time halves.
-    public var hasExtraTime: Bool { extraHalfLength > 0 }
-
     public var canRecordEvents: Bool { clock.period.isPlaying }
 
     /// The playing period `start` would begin from the current break, if any.
+    /// Any match can go to extra time, so Full Time always offers it; `finish`
+    /// is the other choice there.
     public var nextPlayingPeriod: MatchPeriod? {
         switch clock.period {
         case .notStarted: .firstHalf
         case .halfTime: .secondHalf
-        case .fullTime: hasExtraTime ? .extraTimeFirstHalf : nil
+        case .fullTime: .extraTimeFirstHalf
         case .extraTimeHalfTime: .extraTimeSecondHalf
         default: nil
         }
@@ -79,7 +78,7 @@ extension Match {
         return true
     }
 
-    /// Ends the match at full time, without extra time.
+    /// Ends the match at Full Time, without extra time.
     @discardableResult
     public mutating func finish() -> Bool {
         guard clock.period == .fullTime else { return false }

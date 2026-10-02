@@ -6,18 +6,19 @@ private let t0 = Date(timeIntervalSince1970: 1_754_800_000)
 
 private func at(_ seconds: Double) -> Date { t0.addingTimeInterval(seconds) }
 
-private func newMatch(extraTime: Bool = false) -> Match {
-    Match.new(matchType: .football, team1Name: "Team A", team2Name: "Team B", date: t0, extraHalfLength: extraTime ? 10 : 0)
+private func newMatch() -> Match {
+    Match.new(matchType: .football, team1Name: "Team A", team2Name: "Team B", date: t0)
 }
 
 // #expect can't call a mutating method itself, so each step's result is kept first.
+
 private let point = MatchEvent.Kind.shot(side: .team1, player: nil, outcome: .point, type: .fromPlay)
 
 @Test func playingPeriods() {
     #expect(MatchPeriod.allCases.filter(\.isPlaying) == [.firstHalf, .secondHalf, .extraTimeFirstHalf, .extraTimeSecondHalf])
 }
 
-@Test func aMatchWithoutExtraTimeRunsHalfToHalf() {
+@Test func aMatchFinishedAtFullTime() {
     var match = newMatch()
     let started = match.start(at: at(0))
     #expect(started)
@@ -34,9 +35,6 @@ private let point = MatchEvent.Kind.shot(side: .team1, player: nil, outcome: .po
     let ended2 = match.endPeriod(at: at(4900))
     #expect(ended2)
     #expect(match.clock.period == .fullTime)
-    #expect(match.nextPlayingPeriod == nil)
-    let started3 = match.start(at: at(5000))
-    #expect(!started3)
 
     let finished = match.finish()
     #expect(finished)
@@ -47,7 +45,7 @@ private let point = MatchEvent.Kind.shot(side: .team1, player: nil, outcome: .po
 }
 
 @Test func extraTimeRunsToMatchOver() {
-    var match = newMatch(extraTime: true)
+    var match = newMatch()
     match.start(at: at(0)); match.endPeriod(at: at(10))
     match.start(at: at(20)); match.endPeriod(at: at(30))
     #expect(match.nextPlayingPeriod == .extraTimeFirstHalf)
@@ -71,15 +69,25 @@ private let point = MatchEvent.Kind.shot(side: .team1, player: nil, outcome: .po
     #expect(!ended2)
 }
 
+@Test func anyMatchCanGoToExtraTime() {
+    // The extra-time half length is only how long each half is; it never removes extra time.
+    var match = Match.new(matchType: .hurling, team1Name: "Team A", team2Name: "Team B", date: t0, extraHalfLength: 0)
+    match.start(at: at(0)); match.endPeriod(at: at(10)); match.start(at: at(20)); match.endPeriod(at: at(30))
+    let started = match.start(at: at(40))
+    #expect(started)
+    #expect(match.clock.period == .extraTimeFirstHalf)
+}
+
 @Test func finishingIsOnlyForFullTime() {
-    var match = newMatch(extraTime: true)
+    var match = newMatch()
     let finished = match.finish()
     #expect(!finished)
     match.start(at: at(0))
     let finished2 = match.finish()
     #expect(!finished2)
     match.endPeriod(at: at(10)); match.start(at: at(20)); match.endPeriod(at: at(30))
-    // At full time with extra time configured, the match can still be finished instead.
+    // Full Time offers both: extra time, or finishing.
+    #expect(match.nextPlayingPeriod == .extraTimeFirstHalf)
     let finished3 = match.finish()
     #expect(finished3)
     #expect(match.clock.period == .matchOver)
