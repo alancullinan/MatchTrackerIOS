@@ -191,8 +191,7 @@ struct EventIcon: View {
     }
 }
 
-/// The latest thing that happened, with Undo for a few seconds after each
-/// entry. Tapping it opens the events list.
+/// The latest thing that happened, with Undo for a few seconds after each entry.
 struct LastEventCard: View {
     let title: String
     let detail: String
@@ -201,7 +200,6 @@ struct LastEventCard: View {
     let onUndo: () -> Void
     /// Reopens the event's details sheet; `nil` when it has none.
     var onDetails: (() -> Void)?
-    var onOpenList: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 12) {
@@ -238,9 +236,6 @@ struct LastEventCard: View {
         .padding(.vertical, 12)
         .frame(minHeight: 64)
         .glassEffect(.regular, in: .rect(cornerRadius: 22))
-        .contentShape(.rect(cornerRadius: 22))
-        .onTapGesture { onOpenList?() }
-        .accessibilityAction(named: "Show all events") { onOpenList?() }
         .overlay {
             if showsUndo {
                 RoundedRectangle(cornerRadius: 22).strokeBorder(MatchTheme.gold, lineWidth: 2)

@@ -183,8 +183,7 @@ struct MatchScreen: View {
         } else if let event = match.events.last {
             LastEventCard(title: EventText.title(event, in: match), detail: EventText.detail(event, in: match),
                           icon: EventIcon(event), showsUndo: showsUndo, onUndo: { session.undo() },
-                          onDetails: hasDetails(event) ? { session.detailsEvent = event.id } : nil,
-                          onOpenList: { showsEvents = true })
+                          onDetails: hasDetails(event) ? { session.detailsEvent = event.id } : nil)
         }
     }
 

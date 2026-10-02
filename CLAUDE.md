@@ -27,6 +27,7 @@ Other MatchTracker repos exist (`MatchTracker`, the original 2025 Swift app, and
 - Otherwise use the command line. Find an installed simulator with `xcrun simctl list devices available iPhone` (don't assume a model exists), then:
   `xcodebuild test -project MatchTracker/MatchTracker.xcodeproj -scheme MatchTracker -destination 'platform=iOS Simulator,name=<that iPhone>'`
 - Loop until it builds and the tests pass, then check UI changes in Previews or the Simulator before opening a PR.
+- To try the app in the Simulator without touching saved matches, launch it with the `-sampleStore` argument (debug builds only): it opens an in-memory store with the sample matches. Xcode's device-interaction tool can only tap (`t x y`) and wait (`w <seconds>`) here, not swipe or scroll; type by tapping the on-screen keyboard.
 - **Previews:** render one at a time (parallel renders fail). If a render fails with "Library not loaded: /usr/lib/libSystem.B.dylib", the Preview simulator is wedged, not the code: run `xcrun simctl --set previews shutdown all` and render again. In a Preview, don't create an object (e.g. a `MatchSession`) in `onAppear`; it crashed the Preview runtime. Build it with a static `preview(...)` helper instead.
 
 ### One-off setup on the Mac
@@ -197,7 +198,7 @@ The agreed design, tried as a clickable mockup: https://claude.ai/artifact/VpABc
 - **Foul**: Free / Penalty, a card chip (none, yellow, black, red) and who fouled; `side` is the team that conceded it. A card is always part of a foul, so there is no separate Card entry.
 - **Kickout**: the team taking it; recorded as won, the sheet switches to lost (a lost kickout has no player).
 - **Substitution**: one team sheet; pick the player coming off, then it moves on to the player coming on. Picking the same player for both moves them across.
-- **Events list**: from the toolbar or by tapping the last-event card. Newest first, by period; tap an event for its sheet, swipe to delete (not a period end).
+- **Events list**: from the toolbar (not by tapping the last-event card: on smaller phones it covers the second team's More button until scrolled, so a missed tap would open the list). Newest first, by period; tap an event for its sheet, swipe to delete (not a period end).
 - **Times**: every event's sheet has a collapsed "When" to change its period and time. Tapping the clock adjusts it; the period only changes through the main button.
 - **Note**: a team's from More, the match's from the ••• menu. The text is saved however the sheet closes; Cancel or blank text deletes it.
 

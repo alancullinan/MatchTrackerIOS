@@ -77,7 +77,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] Score entry (goal, point, two-pointer, misses, shot types). The scorer sheet after each flag tap (unless switched off per team); Miss under More; Details reopens a recent shot
 - [x] Foul/card, kickout, substitution and note entry. Each is recorded at the tap from More, then its sheet opens for the details; Details reopens it. A match-wide note is in the ••• menu
 - [ ] Another pass on the match screen's look, with the owner, once tracking works end to end
-- [x] Events list with edit/delete: newest first, grouped by period; tap to edit (details and time), swipe to delete. Opened from the toolbar or by tapping the last-event card
+- [x] Events list with edit/delete: newest first, grouped by period; tap to edit (details and time), swipe to delete. Opened from the toolbar
 - [x] Time/period editor: tap the clock (or ••• > Adjust Clock) to move it on or back; any event's period and time can be changed from its sheet, including a period end's time
 
 ## Phase 3: Players
