@@ -146,4 +146,5 @@ The app is used one-handed, on a sideline, often in rain or sun, while watching 
   cd /opt && curl -fsSL https://download.swift.org/swift-6.2-release/ubuntu2404/swift-6.2-RELEASE/swift-6.2-RELEASE-ubuntu24.04.tar.gz | tar xz
   ln -sf /opt/swift-6.2-RELEASE-ubuntu24.04/usr/bin/* /usr/local/bin/
   ```
+- CI (`.github/workflows/ci.yml`) runs on every PR and push to `main`: `matchcore-linux` runs `swift test` in the `swift:6.2` container; `app-macos` runs `swift test` and builds the app for the Simulator. The app has no test target yet - when one is added, switch that step to `xcodebuild test`. The `MatchTracker` scheme is shared (`xcshareddata/`) so CI can see it; keep it committed.
 - App: build and test from Xcode (⌘U), or `xcodebuild test -project MatchTracker/MatchTracker.xcodeproj -scheme MatchTracker -destination 'platform=iOS Simulator,name=iPhone 17'`.

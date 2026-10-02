@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # MatchCore must stay Foundation-only, so it is built and tested on Linux too.
+  matchcore-linux:
+    runs-on: ubuntu-latest
+    container: swift:6.2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test MatchCore
+        working-directory: MatchCore
+        run: swift test
+
+  app-macos:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Test MatchCore
+        working-directory: MatchCore
+        run: swift test
+      # The app has no test target yet; switch this to `xcodebuild test` once it does.
+      - name: Build app
+        run: >
+          xcodebuild build
+          -project MatchTracker/MatchTracker.xcodeproj
+          -scheme MatchTracker
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
