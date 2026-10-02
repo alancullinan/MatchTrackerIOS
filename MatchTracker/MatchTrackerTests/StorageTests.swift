@@ -8,7 +8,8 @@ import Testing
 private let kickOff = Date(timeIntervalSince1970: 1_790_000_000)
 
 /// A match that uses every part of the model: named and unnamed players, a
-/// panel id, team colours with and without a second colour, a running clock,
+/// panel id, team colours with and without a second colour, a team not asked
+/// for scorers, a running clock,
 /// and one event of every kind.
 private func sampleMatch() -> Match {
     var match = Match.new(
@@ -26,6 +27,7 @@ private func sampleMatch() -> Match {
     match.team2.lastPanelID = PanelID()
     match.team1.colors = TeamColors(.maroon, .white)
     match.team2.colors = TeamColors(.green)
+    match.team2.asksForScorers = false
     let scorer = match.team1.players[10].id
     let sub = match.team2.players[20].id
     match.events = [

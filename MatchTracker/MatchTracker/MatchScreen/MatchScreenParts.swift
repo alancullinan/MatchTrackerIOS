@@ -63,6 +63,7 @@ struct TeamCard: View {
     let score: Score
     let flagsEnabled: Bool
     let onScore: (ShotOutcome) -> Void
+    let onMore: () -> Void
 
     var body: some View {
         VStack(spacing: 10) {
@@ -84,6 +85,12 @@ struct TeamCard: View {
                 Spacer(minLength: 8)
                 FlagButton(outcome: .point, teamName: team.name, enabled: flagsEnabled) { onScore(.point) }
             }
+
+            Button("More", systemImage: "plus", action: onMore)
+                .font(.callout.weight(.semibold))
+                .buttonStyle(.glass)
+                .controlSize(.large)
+                .accessibilityLabel("More for \(team.name)")
         }
         .padding(16)
         .frame(maxWidth: .infinity)
@@ -159,6 +166,8 @@ struct LastEventCard: View {
     let flag: Flag?
     let showsUndo: Bool
     let onUndo: () -> Void
+    /// Reopens the scorer sheet; `nil` when the event has no details to edit.
+    var onDetails: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 12) {
@@ -178,10 +187,17 @@ struct LastEventCard: View {
             }
             Spacer(minLength: 8)
             if showsUndo {
-                Button("Undo", action: onUndo)
-                    .buttonStyle(.glass)
-                    .controlSize(.large)
-                    .transition(.opacity.combined(with: .scale))
+                HStack(spacing: 6) {
+                    if let onDetails {
+                        Button("Details", action: onDetails)
+                            .buttonStyle(.glass)
+                            .controlSize(.large)
+                    }
+                    Button("Undo", action: onUndo)
+                        .buttonStyle(.glass)
+                        .controlSize(.large)
+                }
+                .transition(.opacity.combined(with: .scale))
             }
         }
         .padding(.horizontal, 14)
@@ -194,5 +210,48 @@ struct LastEventCard: View {
             }
         }
         .animation(.default, value: showsUndo)
+    }
+}
+
+/// Everything else that can be recorded for a team. For now: a miss.
+struct MoreSheet: View {
+    let teamName: String
+    let canRecord: Bool
+    let onMiss: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Button {
+                    dismiss()
+                    onMiss()
+                } label: {
+                    LabeledContent {
+                        Text("Wide, saved, short or off the post")
+                    } label: {
+                        Label { Text("Miss") } icon: { FlagIcon(fill: nil, pole: .primary).frame(width: 26, height: 26) }
+                    }
+                }
+                .disabled(!canRecord)
+            }
+            .navigationTitle(teamName)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", role: .cancel) { dismiss() }
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                if !canRecord {
+                    Text("Events can be recorded while the ball is in play.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding()
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }

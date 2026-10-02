@@ -15,6 +15,8 @@ final class MatchSession {
         case pause
         case resume
         case score(TeamSide, ShotOutcome)
+        /// A wide; the scorer sheet then offers saved, short or post instead.
+        case miss(TeamSide)
     }
 
     /// The change that Undo would reverse.
@@ -28,6 +30,8 @@ final class MatchSession {
     private(set) var undoable: Undoable?
     /// Goes up with every change, to trigger haptics.
     private(set) var changeCount = 0
+    /// The shot whose details the scorer sheet is showing, if it is open.
+    var scorerSheetEvent: EventID?
     var saveError: String?
 
     private let context: ModelContext
@@ -62,11 +66,48 @@ final class MatchSession {
             let event = changed.record(.shot(side: side, player: nil, outcome: outcome, type: .fromPlay), at: now)
             applied = event != nil
             newUndoable = event.map { .event($0.id) }
+        case .miss(let side):
+            let event = changed.record(.shot(side: side, player: nil, outcome: .wide, type: .fromPlay), at: now)
+            applied = event != nil
+            newUndoable = event.map { .event($0.id) }
         }
 
         guard applied, save(changed) else { return false }
         if action != .pause && action != .resume { undoable = newUndoable }
+        // The tap has counted the shot; now ask for its details. A miss always
+        // asks (wide, saved, short or post); a score only if the team asks for scorers.
+        if case .event(let id) = newUndoable {
+            switch action {
+            case .score(let side, _) where match[side].asksForScorers: scorerSheetEvent = id
+            case .miss: scorerSheetEvent = id
+            default: break
+            }
+        }
         return true
+    }
+
+    /// Saves the details picked on the scorer sheet. See `Match.updateShot`.
+    @discardableResult
+    func updateShot(_ id: EventID, outcome: ShotOutcome, type: ShotType, player: PlayerID?, note: String?) -> Bool {
+        var changed = match
+        guard changed.updateShot(id, outcome: outcome, type: type, player: player, note: note) else { return false }
+        return save(changed)
+    }
+
+    /// Deletes an event, e.g. "Undo point" on the scorer sheet.
+    @discardableResult
+    func deleteEvent(_ id: EventID) -> Bool {
+        var changed = match
+        guard changed.deleteEvent(id) != nil else { return false }
+        if undoable == .event(id) { undoable = nil }
+        return save(changed)
+    }
+
+    /// Turns the scorer sheet on or off for one team's scores.
+    func setAsksForScorers(_ asks: Bool, for side: TeamSide) {
+        var changed = match
+        changed[side].asksForScorers = asks
+        _ = save(changed)
     }
 
     /// Reverses `undoable`. Returns `false`, changing nothing, if there is
