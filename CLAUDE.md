@@ -146,6 +146,37 @@ The app is used one-handed, on a sideline, often in rain or sun, while watching 
 - **Native iOS patterns**: sheets, swipe actions, context menus, haptics, Live Activity - not web-style modals with Cancel/Done bars everywhere.
 - The PWA shows which **tasks** matter (record a score, make a substitution, end a period); its layouts are not a template.
 
+### Match screen: look and flow (agreed with the owner)
+
+The agreed design, tried as a clickable mockup: https://claude.ai/artifact/VpABcEtAGK356oxp7Qbx3R (private to the owner). Build the real screen to this; the reasons are in `PLAN.md` → Decisions.
+
+**Look**
+- A calm pitch-green background (faint mowing stripes, no photo); cards and the top bar in iOS glass. Light and dark modes both readable in sunlight.
+- Gold for the period name and the main button; narrow, condensed scoreboard lettering for the clock and scores.
+- Each team has its own colours (chosen per team when creating the match); its card is tinted with them and shows a small colour badge by the name.
+
+**Layout, top to bottom**
+- Top bar: Back on the left; Stats and a ••• menu (share, live link, edit match, team colours, scorer settings) on the right.
+- Competition name, small. Then the period name (gold) and the big clock. During a break the clock shows how long the last half ran, e.g. "Full Time · 31 min", never 00:00.
+- Two team cards, stacked. Each: team name centred on top; then **green goal flag · score with the total underneath · white point flag** in one row; one **More** button below. No two-pointer (orange) flag on the card.
+- Thumb zone at the bottom: the last event (with Undo and Details for a few seconds after each entry), and one big button that always says the next step (Start 1st Half, End 1st Half, Start 2nd Half, End 2nd Half, Start Extra Time, ...), with a pause/resume button beside it during play. Flags are disabled when the ball isn't in play.
+
+**Recording a score**
+1. Tapping a flag counts the score immediately, at that moment.
+2. The scorer sheet then opens (unless switched off for that team):
+   - **Point / 2-Pointer** switch at the top (not for goals);
+   - how it was taken as chips: From play, Free, 45 (65 in hurling/camogie), Penalty, Mark, Sideline;
+   - the **team sheet** to pick the scorer: laid out like the pitch, forwards at the top down to the goalkeeper, subs 16-30 below. Each player shows number, first name and surname (surnames are often shared). Unnamed players show the number only;
+   - "Add note", collapsed until wanted.
+3. Picking a player only highlights them (tap again to clear, or tap another). **Nothing is saved until Done**, so a wrong pick is just a re-tap.
+4. "Undo point" (top left) removes the score. Dismissing the sheet keeps the score without a scorer.
+- The sheet opens for **both teams** by default; the owner usually knows the home team's names and sometimes only the opposition's numbers. Each team has a "stop asking for scorers" switch (in the sheet and the ••• menu).
+- Scores are linked to the player, not a written name, so names added to a team sheet later appear on scores already recorded.
+
+**Other events**
+- **More** lists Miss, Foul, Card, Substitution, Kickout, Note and Team sheet.
+- **Miss** uses the same sheet as a score: Wide / Saved / Short / Post at the top, then how it was taken and the player.
+
 ## Commands
 
 - `MatchCore` tests: `cd MatchCore && swift test` (macOS or Linux). Needs Swift 6.2 or later; the project uses Swift 6.4 (Xcode 27 on the Mac).
