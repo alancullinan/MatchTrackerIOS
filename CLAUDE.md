@@ -48,6 +48,10 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
   - An unnamed player has `name == nil`; never a `No.N` placeholder.
   - A period-end event records the period that **ended** (e.g. `.firstHalf`).
   - The clock is `period` + seconds banked + `runningSince: Date?`, so running time is always derived from the wall clock.
+  - `note` is a shared optional field on every event, not only `.note` events: the PWA lets shots and substitutions carry notes too.
+  - `.card` exists for older standalone card events; new cards are recorded on a `.foul`.
+  - The last panel imported into a team is `Team.lastPanelID`.
+  - Starting a running clock or pausing a paused one changes nothing, so a double-tap or a repeated pause can never add time twice.
 - **All match logic lives here**, not in views: scoring, period transitions, event sorting, stats, panel normalisation. Views call it; they do not re-implement it.
 - Every logic change comes with a test.
 
