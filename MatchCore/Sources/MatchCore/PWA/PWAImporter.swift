@@ -1,5 +1,22 @@
 import Foundation
 
+// The PWA's backup format, and how each quirk is converted:
+// - Enum strings are the PWA's own (`PWAPeriod` is "1st Half", "Match Over", ...),
+//   mapped case by case to the native enums with `.native`.
+// - Ids are strings ("1754435709770-961121", epoch ms + random) except period-end
+//   events, whose ids are bare numbers. Teams and players are referenced by these ids;
+//   they become sides and new `PlayerID`s. An id that doesn't resolve is an error.
+// - Events are one flat object with many `null` fields; period-end events omit most.
+// - A period-end event's `period` is the break being entered ("Half Time"); natively it
+//   is the period that ended. "Match Over" ends Extra Time 2nd Half only if the match
+//   went to extra time; straight after Full Time it ends nothing and is dropped with a warning.
+// - A match left at "Match Over" without extra time imports at Full Time.
+// - Unnamed players are "No.<jersey number>"; they become `nil`, as do blank names.
+// - Dates are a bare "YYYY-MM-DD"; they become midday on that day.
+// - `halfLength` / `extraHalfLength` are ignored: periods have no set length.
+// - Panels are placed into 30 slots as the PWA's `normalizePanel` does; legacy panels
+//   without jersey numbers fill 1..N in stored order.
+
 /// What a PWA import produced. Nothing is written anywhere; the caller saves it.
 public struct PWAImportResult: Sendable {
     public var matches: [Match]
@@ -17,7 +34,7 @@ public enum PWAImportError: Error, Equatable, Sendable {
     case unknownPlayer(matchID: String, eventID: String, playerID: String)
     case missingField(matchID: String, eventID: String, field: String)
     /// A period-end event whose period is not one the PWA ends into.
-    case unexpectedPeriodEnd(matchID: String, eventID: String, period: MatchPeriod)
+    case unexpectedPeriodEnd(matchID: String, eventID: String, period: PWAPeriod)
     case invalidDate(matchID: String, value: String)
 }
 
@@ -87,7 +104,7 @@ public enum PWAImporter {
         // "Match Over" ends extra time only if the match went to extra time;
         // after Full Time it marks the end of a match whose last half has already ended.
         let wentToExtraTime = pwa.events.contains {
-            ([.extraTimeFirstHalf, .extraTimeHalfTime, .extraTimeSecondHalf] as [MatchPeriod]).contains($0.period)
+            ([.extraTimeFirstHalf, .extraTimeHalfTime, .extraTimeSecondHalf] as [PWAPeriod]).contains($0.period)
         }
 
         var events: [MatchEvent] = []
@@ -103,13 +120,13 @@ public enum PWAImporter {
                 }
                 events.append(MatchEvent(period: ended, time: pwaEvent.timeElapsed, note: note(pwaEvent), kind: .periodEnd))
             } else {
-                events.append(MatchEvent(period: pwaEvent.period, time: pwaEvent.timeElapsed, note: note(pwaEvent), kind: try kind(context)))
+                events.append(MatchEvent(period: pwaEvent.period.native, time: pwaEvent.timeElapsed, note: note(pwaEvent), kind: try kind(context)))
             }
         }
 
         // The PWA's running time is now - periodStartTimestamp; a paused clock keeps it in elapsedTime.
-        // Match Over without extra time is plain Full Time here: .matchOver means after extra time.
-        let period = pwa.currentPeriod == .matchOver && !wentToExtraTime ? .fullTime : pwa.currentPeriod
+        // Match Over without extra time is plain Full Time: .fullTimeAfterExtraTime means after extra time.
+        let period: MatchPeriod = pwa.currentPeriod == .matchOver && !wentToExtraTime ? .fullTime : pwa.currentPeriod.native
         var clock = MatchClock(period: period, bankedSeconds: pwa.elapsedTime)
         if !pwa.isPaused, let start = pwa.periodStartTimestamp {
             clock.bankedSeconds = 0
@@ -119,7 +136,7 @@ public enum PWAImporter {
         // halfLength and extraHalfLength are ignored: periods have no set length.
         return Match(
             legacyID: pwa.id,
-            matchType: pwa.matchType,
+            matchType: pwa.matchType.native,
             competition: pwa.competition,
             date: try date(of: pwa, timeZone: timeZone),
             venue: pwa.venue,
@@ -138,7 +155,7 @@ public enum PWAImporter {
     }
 
     /// The PWA records the period being entered; the native model records the one that ended.
-    static func endedPeriod(entering period: MatchPeriod, wentToExtraTime: Bool) -> MatchPeriod? {
+    static func endedPeriod(entering period: PWAPeriod, wentToExtraTime: Bool) -> MatchPeriod? {
         switch period {
         case .halfTime: .firstHalf
         case .fullTime: .secondHalf
@@ -198,12 +215,12 @@ public enum PWAImporter {
         switch e.type {
         case .shot:
             return .shot(side: try c.side(), player: try c.player(e.player1Id),
-                         outcome: try c.required(e.shotOutcome, "shotOutcome"), type: try c.required(e.shotType, "shotType"))
+                         outcome: try c.required(e.shotOutcome, "shotOutcome").native, type: try c.required(e.shotType, "shotType").native)
         case .foulConceded:
             return .foul(side: try c.side(), player: try c.player(e.player1Id),
-                         outcome: try c.required(e.foulOutcome, "foulOutcome"), card: e.cardType)
+                         outcome: try c.required(e.foulOutcome, "foulOutcome").native, card: e.cardType?.native)
         case .card:
-            return .card(side: try c.side(), player: try c.player(e.player1Id), card: try c.required(e.cardType, "cardType"))
+            return .card(side: try c.side(), player: try c.player(e.player1Id), card: try c.required(e.cardType, "cardType").native)
         case .kickout:
             return .kickout(side: try c.side(), player: try c.player(e.player1Id), won: try c.required(e.wonKickout, "wonKickout"))
         case .substitution:

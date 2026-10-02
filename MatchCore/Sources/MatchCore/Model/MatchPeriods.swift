@@ -5,16 +5,22 @@ extension MatchPeriod {
     public var isPlaying: Bool {
         switch self {
         case .firstHalf, .secondHalf, .extraTimeFirstHalf, .extraTimeSecondHalf: true
-        case .notStarted, .halfTime, .fullTime, .extraTimeHalfTime, .matchOver: false
+        case .notStarted, .halfTime, .fullTime, .extraTimeHalfTime, .fullTimeAfterExtraTime: false
         }
     }
 
-    /// The name to show. `.matchOver` is only reached after extra time, so it
-    /// reads "Full Time (AET)"; the raw value stays "Match Over" for PWA backups.
+    /// The name to show.
     public var displayName: String {
         switch self {
-        case .matchOver: "Full Time (AET)"
-        default: rawValue
+        case .notStarted: "Not Started"
+        case .firstHalf: "1st Half"
+        case .halfTime: "Half Time"
+        case .secondHalf: "2nd Half"
+        case .fullTime: "Full Time"
+        case .extraTimeFirstHalf: "Extra Time 1st Half"
+        case .extraTimeHalfTime: "Extra Time Half Time"
+        case .extraTimeSecondHalf: "Extra Time 2nd Half"
+        case .fullTimeAfterExtraTime: "Full Time (AET)"
         }
     }
 
@@ -29,7 +35,7 @@ extension MatchPeriod {
         case .firstHalf: .halfTime
         case .secondHalf: .fullTime
         case .extraTimeFirstHalf: .extraTimeHalfTime
-        case .extraTimeSecondHalf: .matchOver
+        case .extraTimeSecondHalf: .fullTimeAfterExtraTime
         default: nil
         }
     }
@@ -77,13 +83,13 @@ extension Match {
 
     /// Ends the current playing period: records a period-end event with the
     /// period and its final time, and moves to the following break (or to
-    /// Match Over after extra time). The clock stops; a break starts at 0:00.
+    /// Full Time (AET) after extra time). The clock stops; a break starts at 0:00.
     @discardableResult
     public mutating func endPeriod(at now: Date) -> Bool {
         guard let after = clock.period.periodAfterEnd else { return false }
         let finalTime = clock.elapsed(at: now)
         events.append(MatchEvent(period: clock.period, time: finalTime, kind: .periodEnd))
-        clock = MatchClock(period: after, bankedSeconds: after == .matchOver ? finalTime : 0)
+        clock = MatchClock(period: after, bankedSeconds: after == .fullTimeAfterExtraTime ? finalTime : 0)
         return true
     }
 

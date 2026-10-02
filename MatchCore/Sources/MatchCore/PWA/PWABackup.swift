@@ -86,8 +86,8 @@ public struct PWATeam: Hashable, Sendable, Codable {
 
 public struct PWAEvent: Hashable, Sendable, Codable {
     public var id: PWAEventID
-    public var type: EventType
-    public var period: MatchPeriod
+    public var type: PWAEventType
+    public var period: PWAPeriod
     /// Seconds into `period`.
     public var timeElapsed: Int
     // Period-end events have none of the fields below.
@@ -95,25 +95,25 @@ public struct PWAEvent: Hashable, Sendable, Codable {
     public var player1Id: String?
     /// The player coming on, for a substitution.
     public var player2Id: String?
-    public var shotOutcome: ShotOutcome?
-    public var shotType: ShotType?
-    public var foulOutcome: FoulOutcome?
-    public var cardType: CardType?
+    public var shotOutcome: PWAShotOutcome?
+    public var shotType: PWAShotType?
+    public var foulOutcome: PWAFoulOutcome?
+    public var cardType: PWACardType?
     public var wonKickout: Bool?
     public var noteText: String?
 
     public init(
         id: PWAEventID,
-        type: EventType,
-        period: MatchPeriod,
+        type: PWAEventType,
+        period: PWAPeriod,
         timeElapsed: Int,
         teamId: String? = nil,
         player1Id: String? = nil,
         player2Id: String? = nil,
-        shotOutcome: ShotOutcome? = nil,
-        shotType: ShotType? = nil,
-        foulOutcome: FoulOutcome? = nil,
-        cardType: CardType? = nil,
+        shotOutcome: PWAShotOutcome? = nil,
+        shotType: PWAShotType? = nil,
+        foulOutcome: PWAFoulOutcome? = nil,
+        cardType: PWACardType? = nil,
         wonKickout: Bool? = nil,
         noteText: String? = nil
     ) {
@@ -140,16 +140,16 @@ public struct PWAEvent: Hashable, Sendable, Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(PWAEventID.self, forKey: .id)
-        type = try container.decode(EventType.self, forKey: .type)
-        period = try container.decode(MatchPeriod.self, forKey: .period)
+        type = try container.decode(PWAEventType.self, forKey: .type)
+        period = try container.decode(PWAPeriod.self, forKey: .period)
         timeElapsed = try container.decode(Int.self, forKey: .timeElapsed, default: 0)
         teamId = try container.decodeIfPresent(String.self, forKey: .teamId)
         player1Id = try container.decodeIfPresent(String.self, forKey: .player1Id)
         player2Id = try container.decodeIfPresent(String.self, forKey: .player2Id)
-        shotOutcome = try container.decodeIfPresent(ShotOutcome.self, forKey: .shotOutcome)
-        shotType = try container.decodeIfPresent(ShotType.self, forKey: .shotType)
-        foulOutcome = try container.decodeIfPresent(FoulOutcome.self, forKey: .foulOutcome)
-        cardType = try container.decodeIfPresent(CardType.self, forKey: .cardType)
+        shotOutcome = try container.decodeIfPresent(PWAShotOutcome.self, forKey: .shotOutcome)
+        shotType = try container.decodeIfPresent(PWAShotType.self, forKey: .shotType)
+        foulOutcome = try container.decodeIfPresent(PWAFoulOutcome.self, forKey: .foulOutcome)
+        cardType = try container.decodeIfPresent(PWACardType.self, forKey: .cardType)
         wonKickout = try container.decodeIfPresent(Bool.self, forKey: .wonKickout)
         noteText = try container.decodeIfPresent(String.self, forKey: .noteText)
     }
@@ -182,14 +182,14 @@ public struct PWAMatch: Hashable, Sendable, Codable {
     public var dateTime: String
     public var venue: String
     public var referee: String
-    public var matchType: MatchType
+    public var matchType: PWAMatchType
     /// Minutes. Stored by the PWA but not used by its timer.
     public var halfLength: Int
     public var extraHalfLength: Int
     public var team1: PWATeam
     public var team2: PWATeam
     public var events: [PWAEvent]
-    public var currentPeriod: MatchPeriod
+    public var currentPeriod: PWAPeriod
     /// Seconds into `currentPeriod`.
     public var elapsedTime: Int
     public var isPaused: Bool
@@ -205,13 +205,13 @@ public struct PWAMatch: Hashable, Sendable, Codable {
         dateTime: String,
         venue: String,
         referee: String,
-        matchType: MatchType,
+        matchType: PWAMatchType,
         halfLength: Int,
         extraHalfLength: Int,
         team1: PWATeam,
         team2: PWATeam,
         events: [PWAEvent] = [],
-        currentPeriod: MatchPeriod = .notStarted,
+        currentPeriod: PWAPeriod = .notStarted,
         elapsedTime: Int = 0,
         isPaused: Bool = true,
         periodStartTimestamp: Int64? = nil,
@@ -251,13 +251,13 @@ public struct PWAMatch: Hashable, Sendable, Codable {
         dateTime = try container.decode(String.self, forKey: .dateTime, default: "")
         venue = try container.decode(String.self, forKey: .venue, default: "")
         referee = try container.decode(String.self, forKey: .referee, default: "")
-        matchType = try container.decode(MatchType.self, forKey: .matchType, default: .football)
+        matchType = try container.decode(PWAMatchType.self, forKey: .matchType, default: .football)
         halfLength = try container.decode(Int.self, forKey: .halfLength, default: 30)
         extraHalfLength = try container.decode(Int.self, forKey: .extraHalfLength, default: 10)
         team1 = try container.decode(PWATeam.self, forKey: .team1)
         team2 = try container.decode(PWATeam.self, forKey: .team2)
         events = try container.decode([PWAEvent].self, forKey: .events, default: [])
-        currentPeriod = try container.decode(MatchPeriod.self, forKey: .currentPeriod, default: .notStarted)
+        currentPeriod = try container.decode(PWAPeriod.self, forKey: .currentPeriod, default: .notStarted)
         elapsedTime = try container.decode(Int.self, forKey: .elapsedTime, default: 0)
         isPaused = try container.decode(Bool.self, forKey: .isPaused, default: true)
         periodStartTimestamp = try container.decodeIfPresent(Int64.self, forKey: .periodStartTimestamp)

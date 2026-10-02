@@ -1,6 +1,6 @@
 # MatchTracker iOS - Plan
 
-Rebuild the MatchTracker PWA as a native SwiftUI iOS app. The PWA defines what the app does and the sport's rules; the iOS design, model and UI are native. Code is written mostly with Claude Code in Terminal; this repo on GitHub is the single shared place for the code, the rules (`CLAUDE.md`) and this plan. Tick items off as they land.
+A native SwiftUI iOS app for tracking Gaelic games matches, succeeding the owner's unreleased PWA. The PWA is a reference for features and the sport's rules, not a constraint; the app is designed for iOS first. Code is written mostly with Claude Code in Terminal; this repo on GitHub is the single shared place for the code, the rules (`CLAUDE.md`) and this plan. Tick items off as they land.
 
 ## Decisions
 
@@ -10,10 +10,10 @@ Rebuild the MatchTracker PWA as a native SwiftUI iOS app. The PWA defines what t
 | Minimum iOS | 17 |
 | Persistence | SwiftData, synced to each user's private iCloud database (CloudKit) |
 | Domain logic | `MatchCore` local Swift package, Foundation only |
-| Data model | Native Swift model; PWA format only inside a one-time importer |
-| Migrating PWA data | One-time import of the owner's PWA backup (the only PWA user) |
+| Data model | Native Swift model; anything PWA-specific stays inside the isolated importer |
+| Migrating PWA data | Optional one-time import of the owner's own matches; low priority |
 | Sharing a match | Later. Approach undecided: CloudKit sharing, or a read-only link like live sharing |
-| Live sharing | Keep Firebase, compatible with the PWA's `live.html` viewer |
+| Live sharing | Later. Approach undecided; the PWA's Firebase viewer (`live.html`) is one option, not a requirement |
 | v1 extras | Live Activity, haptics, keep screen awake |
 | Two-pointers | Football and Ladies Football |
 
@@ -39,7 +39,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 ## Phase 1: Domain (`MatchCore`)
 
-- [x] Enums with the PWA's exact raw values
+- [x] Enums (now the app's own case names; the PWA's strings live in `PWA/`)
 - [x] PWA backup types that round-trip the fixture (string-or-number ids, nulls, unknown keys)
 - [x] Move the PWA types into `Sources/MatchCore/PWA/` and rename them `PWABackup`, `PWAMatch`, `PWATeam`, `PWAPlayer`, `PWAEvent`, `PWAPanel`, `PWAPanelPlayer`; keep their round-trip tests passing
 - [x] Native model in `Sources/MatchCore/Model/`: `Match`, `Team`, `Player`, `MatchEvent` (+ `kind` enum), `MatchClock`, `PlayerPanel`, typed IDs (see `CLAUDE.md`)
@@ -72,7 +72,6 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 ## Phase 4: Data
 
 - [ ] Join the paid Apple Developer Program, then turn on iCloud in Xcode: MatchTracker target > Signing & Capabilities > **+ Capability > iCloud**, tick **CloudKit**, add container `iCloud.com.alancullinan.MatchTracker`; then **+ Capability > Background Modes**, tick **Remote notifications**. Set the store's `cloudKitDatabase` so SwiftData syncs
-- [ ] Import the owner's PWA backup (a hidden or one-off screen is fine)
 - [ ] iCloud sync status in Settings (signed out / syncing / up to date)
 - [ ] Optional: export everything to Files as a backup
 
@@ -80,7 +79,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 - [ ] Statistics screen
 - [ ] 800x800 event share images (`ImageRenderer`)
-- [ ] Firebase live sharing, compatible with `live.html`
+- [ ] Live score sharing (approach to decide)
 
 ## Phase 6: iOS extras
 
@@ -91,9 +90,9 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 ## Phase 7: Release
 
 - [ ] TestFlight, tried at a real match
-- [ ] App Store listing, screenshots, privacy manifest (disclose the Firebase share link)
-- [ ] Decide the PWA's future; keep its export format stable while both exist
+- [ ] App Store listing, screenshots, privacy manifest
 
 ## Later ideas
 
+- [ ] If wanted: a hidden screen to run the PWA import once (the importer is already in `MatchCore`)
 - [ ] Share a match with someone else (read-only first)

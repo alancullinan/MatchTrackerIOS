@@ -47,7 +47,7 @@ public struct MatchEvent: Hashable, Sendable, Codable {
     public var type: EventType {
         switch kind {
         case .shot: .shot
-        case .foul: .foulConceded
+        case .foul: .foul
         case .card: .card
         case .kickout: .kickout
         case .substitution: .substitution
