@@ -60,7 +60,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] Add GitHub Actions CI (macOS: build the app, run `MatchCore` tests; Linux: run `MatchCore` tests), so every app PR is checked from the start
 - [x] SwiftData models (CloudKit-compatible, see `CLAUDE.md`) and mapping to/from `MatchCore`; stored on the device only until iCloud is turned on in Phase 4
   - [x] Decide how events are stored (one SwiftData model per event, or the event list encoded on the match) and record the choice in the Decisions table: encoded on the match
-- [ ] Home and match list with filter
+- [x] Home and match list with filter (the match list is the home screen)
 - [ ] Match create/edit form (teams, code, competition, date, venue, referee; no period lengths)
 - [ ] Match details: scoreboard, wall-clock timer, period transitions
 - [ ] Score entry (goal, point, two-pointer, misses, shot types)

@@ -32,6 +32,7 @@ MatchTracker/                   Xcode project folder
   MatchTracker.xcodeproj        open this in Xcode
   MatchTracker/                 iOS app target sources (SwiftUI, SwiftData)
     Storage/                    SwiftData records (StoredMatch, StoredPanel) and the store
+    Matches/                    the match list (the home screen), its rows, and sample matches for Previews
   MatchTrackerTests/            app tests (Swift Testing), run by CI
 MatchCore/                      local Swift package - the domain layer (linked as ../MatchCore)
   Package.swift
@@ -98,6 +99,8 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
   - schema changes are additive only (add properties; never rename or remove one once shipped).
 - Each user's data lives in their own iCloud account; there is no shared server. Live score sharing, if added, sends only a snapshot of the score, never the match data.
 - **Storage (`MatchTracker/Storage/`)**: `StoredMatch` and `StoredPanel` are only how MatchCore values are saved; views and logic work with `Match` and `PlayerPanel`. Write with `context.store(match)` (updates the record with that id, or inserts one - ids are kept unique here, not by the schema) and read with `stored.match()`. Scalar fields are columns; rosters, events and panel slots are encoded with `StoredCoding` (JSON, sorted keys). This is a deliberate exception to Apple's guidance to store your own types as models rather than encoded blobs: nothing ever queries inside events or rosters, and the list filters on columns. It makes the `Codable` shape of `Player`, `MatchEvent` (including `Kind`'s case and label names) and `PanelSlot` a stored format: change it only additively, like the enums. Reading never guesses: an unknown case name or unreadable JSON throws `StoredDataError`, and nothing is overwritten with a default.
+- **App structure:** the match list is the home screen (no separate hub); other areas (panels, export) are reached from its toolbar. Screens live in folders by feature (`Matches/`, later `Players/`, `Panels/`). Rules a screen depends on (search, sort, delete) go in a small testable type beside it (e.g. `MatchList`), not in the view.
+- **Previews:** use the `.sampleMatches` and `.emptyStore` preview traits (`Matches/SampleMatches.swift`, debug only). When a screen gains a new state, add a sample that shows it.
 - Keep a match **self-contained** (its teams, players and events belong to it) so a single match can be shared later. How is undecided - see `PLAN.md`.
 - Never delete data that has not been verified - e.g. a migration writes, reads back and compares before removing anything.
 
