@@ -32,4 +32,11 @@ struct EventTextTests {
         #expect(EventText.title(end, in: match) == "End of 1st Half")
         #expect(EventText.detail(end, in: match) == "1st Half · 31:40 · 0-00 v 0-00")
     }
+
+    @Test func namesSplitIntoFirstNameAndSurname() {
+        #expect(EventText.nameLines(Player(jerseyNumber: 1, name: "Aoife Casey")) == ("Aoife", "Casey"))
+        #expect(EventText.nameLines(Player(jerseyNumber: 1, name: "Seán Mac Cumhaill")) == ("Seán", "Mac Cumhaill"))
+        #expect(EventText.nameLines(Player(jerseyNumber: 1, name: "Cha")) == ("Cha", nil))
+        #expect(EventText.nameLines(Player(jerseyNumber: 1)) == (nil, nil))
+    }
 }

@@ -71,8 +71,9 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] Match create/edit form (teams, code, competition, date, venue, referee; no period lengths). Both teams must be named; the code can't change once the match has started
 - [x] Team colours: chosen per team in the match form (needed by the match screen's tinted team cards). A fixed palette of 12 kit colours; a main colour and an optional second
 - [x] Match details: scoreboard, wall-clock timer, period transitions. The match screen to the agreed design; goal and point flags record a score straight away; Undo for the last event, a period end or a period start
-- [ ] Score entry (goal, point, two-pointer, misses, shot types)
+- [x] Score entry (goal, point, two-pointer, misses, shot types). The scorer sheet after each flag tap (unless switched off per team); Miss under More; Details reopens a recent shot
 - [ ] Foul/card, kickout, substitution and note entry
+- [ ] Another pass on the match screen's look, with the owner, once tracking works end to end
 - [ ] Events list with edit/delete
 - [ ] Time/period editor
 

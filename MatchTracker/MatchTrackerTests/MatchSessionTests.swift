@@ -111,4 +111,55 @@ struct MatchSessionTests {
         session.reload()
         #expect(session.match.venue == "Parnell Park")
     }
+
+    // MARK: - Scorer sheet
+
+    @Test func aScoreOpensTheScorerSheet() {
+        session.perform(.nextStep, at: at(0))
+        session.perform(.score(.team1, .point), at: at(60))
+        #expect(session.scorerSheetEvent == session.match.events.last?.id)
+    }
+
+    @Test func aTeamThatIsNotAskedForScorersSkipsTheSheet() throws {
+        session.setAsksForScorers(false, for: .team2)
+        #expect(try stored().team2.asksForScorers == false)
+
+        session.perform(.nextStep, at: at(0))
+        session.perform(.score(.team2, .goal), at: at(60))
+        #expect(session.scorerSheetEvent == nil)
+        #expect(session.match.score(.team2).goals == 1)
+    }
+
+    @Test func aMissIsAWideAndAlwaysOpensTheSheet() throws {
+        session.setAsksForScorers(false, for: .team1)
+        session.perform(.nextStep, at: at(0))
+        session.perform(.miss(.team1), at: at(60))
+
+        let miss = try #require(session.match.events.last)
+        #expect(miss.kind == .shot(side: .team1, player: nil, outcome: .wide, type: .fromPlay))
+        #expect(session.scorerSheetEvent == miss.id)
+    }
+
+    @Test func doneSavesTheShotsDetails() throws {
+        session.perform(.nextStep, at: at(0))
+        session.perform(.score(.team1, .point), at: at(60))
+        let id = try #require(session.scorerSheetEvent)
+        let scorer = session.match.team1.players[13].id
+
+        let saved = session.updateShot(id, outcome: .twoPointer, type: .free, player: scorer, note: nil)
+        #expect(saved)
+        #expect(try stored().event(id)?.kind == .shot(side: .team1, player: scorer, outcome: .twoPointer, type: .free))
+    }
+
+    @Test func undoOnTheSheetRemovesTheScore() throws {
+        session.perform(.nextStep, at: at(0))
+        session.perform(.score(.team1, .goal), at: at(60))
+        let id = try #require(session.scorerSheetEvent)
+
+        let deleted = session.deleteEvent(id)
+        #expect(deleted)
+        #expect(session.match.events.isEmpty)
+        #expect(session.undoable == nil)
+        #expect(try stored().events.isEmpty)
+    }
 }

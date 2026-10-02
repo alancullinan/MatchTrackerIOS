@@ -38,6 +38,8 @@ final class StoredMatch {
     var team1SecondaryColor: String?
     var team2PrimaryColor: String?
     var team2SecondaryColor: String?
+    var team1AsksForScorers: Bool = true
+    var team2AsksForScorers: Bool = true
 
     /// `[MatchEvent]` as JSON, in recorded order.
     var events: Data = Data()
@@ -76,6 +78,8 @@ final class StoredMatch {
         set(\.team1SecondaryColor, match.team1.colors?.secondary?.rawValue)
         set(\.team2PrimaryColor, match.team2.colors?.primary.rawValue)
         set(\.team2SecondaryColor, match.team2.colors?.secondary?.rawValue)
+        set(\.team1AsksForScorers, match.team1.asksForScorers)
+        set(\.team2AsksForScorers, match.team2.asksForScorers)
         set(\.events, events)
         set(\.clockPeriod, match.clock.period.rawValue)
         set(\.clockBankedSeconds, match.clock.bankedSeconds)
@@ -97,12 +101,14 @@ final class StoredMatch {
                 name: team1Name,
                 players: try StoredCoding.decode([Player].self, team1Players, field: "team1Players"),
                 colors: try Self.colors(team1PrimaryColor, team1SecondaryColor, field: "team1"),
+                asksForScorers: team1AsksForScorers,
                 lastPanelID: team1LastPanelID.map(PanelID.init)
             ),
             team2: Team(
                 name: team2Name,
                 players: try StoredCoding.decode([Player].self, team2Players, field: "team2Players"),
                 colors: try Self.colors(team2PrimaryColor, team2SecondaryColor, field: "team2"),
+                asksForScorers: team2AsksForScorers,
                 lastPanelID: team2LastPanelID.map(PanelID.init)
             ),
             events: try StoredCoding.decode([MatchEvent].self, events, field: "events"),

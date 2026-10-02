@@ -42,7 +42,7 @@ MatchTracker/                   Xcode project folder
   MatchTracker/                 iOS app target sources (SwiftUI, SwiftData)
     Storage/                    SwiftData records (StoredMatch, StoredPanel) and the store
     Matches/                    the match list (the home screen), its rows, and sample matches for Previews
-    MatchScreen/                the match screen: `MatchSession` (applies, saves and undoes changes), theme, parts, `EventText`
+    MatchScreen/                the match screen: `MatchSession` (applies, saves and undoes changes), theme, parts, `ScorerSheet`, `EventText`
     Teams/                      team colour badge and picker (`KitColor.color` lives here, not in MatchCore)
   MatchTrackerTests/            app tests (Swift Testing), run by CI
 MatchCore/                      local Swift package - the domain layer (linked as ../MatchCore)
@@ -65,12 +65,13 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | --- | --- |
 | `Match.swift` | `Match` (teams, events, clock, `legacyID`, `liveShareID`), `Match.new(...)`, `match[.team1]` |
 | `MatchDetails.swift` | `MatchDetails` (what the match form edits), `Match.new(details)`, `match.apply(_:)`, `canChangeMatchType`, `MatchType.displayName` |
-| `Team.swift`, `Player.swift`, `TeamSide.swift` | 30-player rosters (`Team.roster`), optional names, `Team.colors`, `.team1` / `.team2` |
+| `Team.swift`, `Player.swift`, `TeamSide.swift` | 30-player rosters (`Team.roster`), optional names, `Team.colors`, `Team.asksForScorers`, `.team1` / `.team2` |
 | `TeamColors.swift` | `KitColor` (the palette, stored by case name) and `TeamColors` (main + optional second colour) |
 | `MatchEvent.swift` | `MatchEvent` and its `Kind` (shot, foul, card, kickout, substitution, note, periodEnd); `side` and `type` |
 | `MatchClock.swift` | Wall-clock timer: `elapsed(at:)`, `start(at:)`, `pause(at:)` |
 | `MatchPeriods.swift` | `isPlaying`, `displayName`, `match.start/pause/endPeriod(at:)`, `match.record(_:note:at:)`, `canRecordEvents`, `nextPlayingPeriod` |
 | `MatchSteps.swift` | `MatchStep` and `nextStep` / `takeNextStep(at:)` (the main button), `undoLastEvent()`, `undoPeriodStart()`, `lastPeriodEnd`, `MatchClock.text(seconds:)`, `MatchEvent.minute` |
+| `ShotDetails.swift` | `ShotOutcome.alternatives(in:)`, `ShotType.options(for:)` (45 or 65), `match.updateShot(...)`, `match.deleteEvent(_:)`, `match.event(_:)` |
 | `EventOrder.swift` | `eventsInOrder`, `eventsNewestFirst`, `score(_:through:)` (score at any event) |
 | `Score.swift` | `Score` (goals, points, two-pointers, total, "1-05"), `match.score(_:)`, `MatchType.allowsTwoPointers` |
 | `Stats.swift` | `match.stats(_:)` → `TeamStats`: shooting, per-player stats with score by shot type, fouls, cards, substitutions |

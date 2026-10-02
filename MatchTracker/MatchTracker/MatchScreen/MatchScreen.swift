@@ -36,11 +36,16 @@ struct MatchScreenDestination: View {
     }
 }
 
+/// Identifiable wrappers, so the sheets can be driven by optional values.
+private struct SheetTeam: Identifiable { let side: TeamSide; var id: TeamSide { side } }
+private struct SheetEvent: Identifiable { let eventID: EventID; var id: EventID { eventID } }
+
 /// The live match: clock, both teams with their flags, and the next step.
 struct MatchScreen: View {
     @Bindable var session: MatchSession
 
     @State private var isEditing = false
+    @State private var moreFor: TeamSide?
 
     /// How long Undo stays on the last-event card after a change.
     private static let undoSeconds: Duration = .seconds(6)
@@ -59,9 +64,9 @@ struct MatchScreen: View {
                 }
                 ClockView(match: match)
                 ForEach(TeamSide.allCases, id: \.self) { side in
-                    TeamCard(team: match[side], score: match.score(side), flagsEnabled: match.canRecordEvents) { outcome in
-                        session.perform(.score(side, outcome), at: .now)
-                    }
+                    TeamCard(team: match[side], score: match.score(side), flagsEnabled: match.canRecordEvents,
+                             onScore: { session.perform(.score(side, $0), at: .now) },
+                             onMore: { moreFor = side })
                 }
             }
             .padding(.horizontal, 16)
@@ -75,11 +80,28 @@ struct MatchScreen: View {
             ToolbarItem(placement: .primaryAction) {
                 Menu("More Options", systemImage: "ellipsis") {
                     Button("Edit Match", systemImage: "pencil") { isEditing = true }
+                    Section("Scorer Sheet") {
+                        ForEach(TeamSide.allCases, id: \.self) { side in
+                            Toggle("Ask for \(EventText.teamName(match[side])) scorers", isOn: Binding(
+                                get: { match[side].asksForScorers },
+                                set: { session.setAsksForScorers($0, for: side) }
+                            ))
+                        }
+                    }
                 }
             }
         }
         .sheet(isPresented: $isEditing, onDismiss: session.reload) {
             MatchFormView(editing: match)
+        }
+        .sheet(item: Binding(get: { moreFor.map(SheetTeam.init) }, set: { moreFor = $0?.side })) { item in
+            MoreSheet(teamName: EventText.teamName(match[item.side]), canRecord: match.canRecordEvents) {
+                session.perform(.miss(item.side), at: .now)
+            }
+        }
+        .sheet(item: Binding(get: { session.scorerSheetEvent.map(SheetEvent.init) },
+                             set: { session.scorerSheetEvent = $0?.eventID })) { item in
+            ScorerSheet(session: session, eventID: item.eventID)
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: session.changeCount)
         .task(id: session.undoable) {
@@ -142,7 +164,8 @@ struct MatchScreen: View {
                           flag: nil, showsUndo: true) { session.undo() }
         } else if let event = match.events.last {
             LastEventCard(title: EventText.title(event, in: match), detail: EventText.detail(event, in: match),
-                          flag: flag(for: event), showsUndo: showsUndo) { session.undo() }
+                          flag: flag(for: event), showsUndo: showsUndo, onUndo: { session.undo() },
+                          onDetails: event.type == .shot ? { session.scorerSheetEvent = event.id } : nil)
         }
     }
 

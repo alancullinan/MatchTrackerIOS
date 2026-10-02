@@ -6,13 +6,23 @@ public struct Team: Hashable, Sendable, Codable {
     public var players: [Player]
     /// `nil` until colours are chosen for the team.
     public var colors: TeamColors?
+    /// Whether recording a score for this team opens the scorer sheet. On by
+    /// default; switched off for a team whose players aren't known.
+    public var asksForScorers: Bool
     /// The panel last imported into this team, offered first next time.
     public var lastPanelID: PanelID?
 
-    public init(name: String, players: [Player], colors: TeamColors? = nil, lastPanelID: PanelID? = nil) {
+    public init(
+        name: String,
+        players: [Player],
+        colors: TeamColors? = nil,
+        asksForScorers: Bool = true,
+        lastPanelID: PanelID? = nil
+    ) {
         self.name = name
         self.players = players
         self.colors = colors
+        self.asksForScorers = asksForScorers
         self.lastPanelID = lastPanelID
     }
 

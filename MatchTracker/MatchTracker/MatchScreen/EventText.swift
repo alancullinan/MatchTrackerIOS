@@ -40,6 +40,14 @@ enum EventText {
         return "No. \(player.jerseyNumber) \(name)"
     }
 
+    /// A name split for the team sheet: first name, then the rest as the
+    /// surname ("Seán", "Mac Cumhaill"). Both `nil` for an unnamed player.
+    static func nameLines(_ player: Player) -> (first: String?, surname: String?) {
+        guard let name = player.name else { return (nil, nil) }
+        let parts = name.split(separator: " ", maxSplits: 1)
+        return (String(parts[0]), parts.count > 1 ? String(parts[1]) : nil)
+    }
+
     static func teamName(_ team: Team) -> String {
         team.name.isEmpty ? "Unnamed team" : team.name
     }
