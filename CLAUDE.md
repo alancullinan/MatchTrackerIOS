@@ -53,6 +53,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | File (`Sources/MatchCore/Model/`) | What it holds |
 | --- | --- |
 | `Match.swift` | `Match` (teams, events, clock, `legacyID`, `liveShareID`), `Match.new(...)`, `match[.team1]` |
+| `MatchDetails.swift` | `MatchDetails` (what the match form edits), `Match.new(details)`, `match.apply(_:)`, `canChangeMatchType`, `MatchType.displayName` |
 | `Team.swift`, `Player.swift`, `TeamSide.swift` | 30-player rosters (`Team.roster`), optional names, `.team1` / `.team2` |
 | `MatchEvent.swift` | `MatchEvent` and its `Kind` (shot, foul, card, kickout, substitution, note, periodEnd); `side` and `type` |
 | `MatchClock.swift` | Wall-clock timer: `elapsed(at:)`, `start(at:)`, `pause(at:)` |

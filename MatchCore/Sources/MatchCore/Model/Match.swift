@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Match: Hashable, Sendable, Codable {
+public struct Match: Hashable, Sendable, Codable, Identifiable {
     public var id: MatchID
     /// The PWA's id for a match brought in by the one-time import; `nil` otherwise.
     public var legacyID: String?

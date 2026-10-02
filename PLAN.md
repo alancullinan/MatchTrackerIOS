@@ -66,7 +66,8 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] SwiftData models (CloudKit-compatible, see `CLAUDE.md`) and mapping to/from `MatchCore`; stored on the device only until iCloud is turned on in Phase 4
   - [x] Decide how events are stored (one SwiftData model per event, or the event list encoded on the match) and record the choice in the Decisions table: encoded on the match
 - [x] Home and match list with filter (the match list is the home screen)
-- [ ] Match create/edit form (teams, code, competition, date, venue, referee; no period lengths)
+- [x] Match create/edit form (teams, code, competition, date, venue, referee; no period lengths). Both teams must be named; the code can't change once the match has started
+- [ ] Team colours: chosen per team in the match form (needed by the match screen's tinted team cards)
 - [ ] Match details: scoreboard, wall-clock timer, period transitions
 - [ ] Score entry (goal, point, two-pointer, misses, shot types)
 - [ ] Foul/card, kickout, substitution and note entry
