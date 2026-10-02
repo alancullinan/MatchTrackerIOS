@@ -219,8 +219,8 @@ struct LastEventCard: View {
     }
 }
 
-/// Everything else that can be recorded for a team: a miss, a foul, a card,
-/// a kickout, a substitution or a note. Each is recorded at the tap, then its
+/// Everything else that can be recorded for a team: a miss, a foul (with any
+/// card), a kickout, a substitution or a note. Each is recorded at the tap, then its
 /// sheet opens for the details.
 struct MoreSheet: View {
     let teamName: String
@@ -236,24 +236,8 @@ struct MoreSheet: View {
                 row("Miss", detail: "Wide, saved, short or off the post", action: .miss(side)) {
                     FlagIcon(fill: nil, pole: .primary)
                 }
-                row("Foul", detail: "A free or penalty conceded", action: .foul(side, card: nil)) {
+                row("Foul", detail: "A free or penalty, and any card", action: .foul(side)) {
                     Image(systemName: "hand.raised.fill")
-                }
-                LabeledContent {
-                    HStack(spacing: 4) {
-                        ForEach(CardType.offered, id: \.self) { card in
-                            Button { record(.foul(side, card: card)) } label: {
-                                CardSwatch(card: card)
-                                    .frame(width: 26, height: 34)
-                                    .frame(width: 48, height: 48)
-                                    .contentShape(.rect)
-                            }
-                            .buttonStyle(.borderless)
-                            .accessibilityLabel(EventText.cardName(card))
-                        }
-                    }
-                } label: {
-                    Label { Text("Card") } icon: { Image(systemName: "rectangle.portrait.fill").foregroundStyle(.primary) }
                 }
                 row("Kickout", detail: "Their own kickout, won or lost", action: .kickout(side)) {
                     Image(systemName: "arrow.up.forward")

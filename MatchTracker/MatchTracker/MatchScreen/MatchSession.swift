@@ -17,8 +17,8 @@ final class MatchSession {
         case score(TeamSide, ShotOutcome)
         /// A wide; the scorer sheet then offers saved, short or post instead.
         case miss(TeamSide)
-        /// A free conceded by the team, with `card` if one was shown.
-        case foul(TeamSide, card: CardType?)
+        /// A free conceded by the team; the sheet adds a penalty or a card.
+        case foul(TeamSide)
         /// The team's kickout, as won; the sheet offers lost instead.
         case kickout(TeamSide)
         case substitution(TeamSide)
@@ -76,8 +76,8 @@ final class MatchSession {
         case .miss(let side):
             newUndoable = record(.shot(side: side, player: nil, outcome: .wide, type: .fromPlay), in: &changed, at: now)
             applied = newUndoable != nil
-        case .foul(let side, let card):
-            newUndoable = record(.foul(side: side, player: nil, outcome: .free, card: card), in: &changed, at: now)
+        case .foul(let side):
+            newUndoable = record(.foul(side: side, player: nil, outcome: .free, card: nil), in: &changed, at: now)
             applied = newUndoable != nil
         case .kickout(let side):
             newUndoable = record(.kickout(side: side, player: nil, won: true), in: &changed, at: now)

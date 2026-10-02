@@ -391,7 +391,7 @@ struct CardSwatch: View {
 
 #Preview("Foul sheet") {
     let session = MatchSession.preview(.secondHalf)
-    session.perform(.foul(.team2, card: .yellow), at: .now)
+    session.perform(.foul(.team2), at: .now)
     return EventDetailsSheet(session: session, eventID: session.match.events.last!.id)
 }
 

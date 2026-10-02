@@ -190,9 +190,9 @@ The agreed design, tried as a clickable mockup: https://claude.ai/artifact/VpABc
 - Scores are linked to the player, not a written name, so names added to a team sheet later appear on scores already recorded.
 
 **Other events**
-- **More** lists Miss, Foul, Card, Kickout, Substitution and Note (Team sheet comes with Phase 3). Each records at the tap, then opens its sheet; Undo and Details on the last-event card work for all of them.
+- **More** lists Miss, Foul, Kickout, Substitution and Note (Team sheet comes with Phase 3). Each records at the tap, then opens its sheet; Undo and Details on the last-event card work for all of them.
 - **Miss** uses the same sheet as a score: Wide / Saved / Short / Post at the top, then how it was taken and the player.
-- **Foul**: Free / Penalty, a card chip (none, yellow, black, red) and who fouled; `side` is the team that conceded it. The Card row's three cards record a foul with that card in one tap.
+- **Foul**: Free / Penalty, a card chip (none, yellow, black, red) and who fouled; `side` is the team that conceded it. A card is always part of a foul, so there is no separate Card entry.
 - **Kickout**: the team taking it; recorded as won, the sheet switches to lost (a lost kickout has no player).
 - **Substitution**: one team sheet; pick the player coming off, then it moves on to the player coming on. Picking the same player for both moves them across.
 - **Note**: a team's from More, the match's from the ••• menu. The text is saved however the sheet closes; Cancel or blank text deletes it.

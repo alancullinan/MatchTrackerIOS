@@ -213,7 +213,8 @@ struct MatchScreen: View {
 
 #Preview("Just after a card") {
     let session = MatchSession.preview(.secondHalf)
-    session.perform(.foul(.team2, card: .black), at: .now)
+    session.perform(.foul(.team2), at: .now)
+    session.updateFoul(session.match.events.last!.id, outcome: .free, card: .black, player: nil, note: nil)
     session.detailsEvent = nil
     return NavigationStack { MatchScreen(session: session) }
 }

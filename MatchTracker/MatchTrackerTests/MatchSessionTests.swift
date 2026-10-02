@@ -167,7 +167,7 @@ struct MatchSessionTests {
 
     @Test func aFoulIsAFreeAndOpensItsSheet() throws {
         session.perform(.nextStep, at: at(0))
-        session.perform(.foul(.team2, card: nil), at: at(300))
+        session.perform(.foul(.team2), at: at(300))
 
         let foul = try #require(session.match.events.last)
         #expect(foul.kind == .foul(side: .team2, player: nil, outcome: .free, card: nil))
@@ -176,15 +176,9 @@ struct MatchSessionTests {
         #expect(session.undoable == .event(foul.id))
     }
 
-    @Test func aCardIsRecordedOnAFoul() throws {
-        session.perform(.nextStep, at: at(0))
-        session.perform(.foul(.team1, card: .yellow), at: at(300))
-        #expect(session.match.events.last?.kind == .foul(side: .team1, player: nil, outcome: .free, card: .yellow))
-    }
-
     @Test func aFoulsDetailsAreSaved() throws {
         session.perform(.nextStep, at: at(0))
-        session.perform(.foul(.team1, card: nil), at: at(300))
+        session.perform(.foul(.team1), at: at(300))
         let id = try #require(session.detailsEvent)
         let fouler = session.match.team1.players[3].id
 
@@ -241,7 +235,7 @@ struct MatchSessionTests {
 
     @Test func nothingIsRecordedWhileTheBallIsNotInPlay() {
         let recorded = [
-            session.perform(.foul(.team1, card: .red), at: at(0)),
+            session.perform(.foul(.team1), at: at(0)),
             session.perform(.kickout(.team1), at: at(0)),
             session.perform(.substitution(.team1), at: at(0)),
             session.perform(.note(nil), at: at(0)),
