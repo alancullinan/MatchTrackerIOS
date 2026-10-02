@@ -49,7 +49,7 @@ struct FoulSheet: View {
                 .controlSize(.large)
 
                 SheetLabel("Card")
-                ChoiceChips(options: [nil] + CardType.offered.map(Optional.some), selection: $card) { card in
+                ChoiceChips(options: cardOptions(keeping: recordedCard), selection: $card) { card in
                     HStack(spacing: 6) {
                         if let card { CardSwatch(card: card).frame(width: 14, height: 19) }
                         Text(card?.displayName ?? "No card")
@@ -69,6 +69,16 @@ struct FoulSheet: View {
         } else {
             EventGoneView()
         }
+    }
+}
+
+extension FoulSheet {
+    /// No card, then the cards used in this code, plus the foul's own card if
+    /// the code doesn't use it (e.g. an older record), so it isn't lost.
+    private func cardOptions(keeping recorded: CardType?) -> [CardType?] {
+        var cards = CardType.options(for: session.match.matchType)
+        if let recorded, !cards.contains(recorded) { cards.append(recorded) }
+        return [nil] + cards
     }
 }
 

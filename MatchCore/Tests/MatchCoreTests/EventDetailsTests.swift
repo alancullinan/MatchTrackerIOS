@@ -57,9 +57,34 @@ private func playing() -> Match {
     #expect(!updated)
 }
 
-@Test func cardsAreOfferedYellowBlackRed() {
-    #expect(CardType.offered == [.yellow, .black, .red])
-    #expect(Set(CardType.offered) == Set(CardType.allCases))
+@Test func theBlackCardIsOnlyInFootballAndHurling() {
+    #expect(CardType.options(for: .football) == [.yellow, .black, .red])
+    #expect(CardType.options(for: .hurling) == [.yellow, .black, .red])
+    #expect(CardType.options(for: .ladiesFootball) == [.yellow, .red])
+    #expect(CardType.options(for: .camogie) == [.yellow, .red])
+}
+
+@Test func aBlackCardCantBeGivenInCamogie() throws {
+    var match = Match.new(matchType: .camogie, team1Name: "Team A", team2Name: "Team B", date: t0)
+    match.start(at: t0)
+    let recorded = match.record(.foul(side: .team1, player: nil, outcome: .free, card: nil), at: t0)
+    let foul = try #require(recorded)
+
+    let black = match.updateFoul(foul.id, outcome: .free, card: .black, player: nil, note: nil)
+    #expect(!black)
+    let red = match.updateFoul(foul.id, outcome: .free, card: .red, player: nil, note: nil)
+    #expect(red)
+}
+
+@Test func aBlackCardAlreadyRecordedInLadiesFootballIsKept() throws {
+    var match = Match.new(matchType: .ladiesFootball, team1Name: "Team A", team2Name: "Team B", date: t0)
+    match.start(at: t0)
+    let recorded = match.record(.foul(side: .team1, player: nil, outcome: .free, card: .black), at: t0)
+    let foul = try #require(recorded)
+
+    let updated = match.updateFoul(foul.id, outcome: .penalty, card: .black, player: nil, note: nil)
+    #expect(updated)
+    #expect(match.event(foul.id)?.kind == .foul(side: .team1, player: nil, outcome: .penalty, card: .black))
 }
 
 // MARK: - Kickouts

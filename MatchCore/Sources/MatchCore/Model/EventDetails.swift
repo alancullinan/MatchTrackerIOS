@@ -6,8 +6,15 @@ import Foundation
 // is of another kind or a detail doesn't fit.
 
 extension CardType {
-    /// The cards in the order they are offered: yellow, black, red.
-    public static let offered: [CardType] = [.yellow, .black, .red]
+    /// The cards a referee can show in `matchType`, in the order the foul
+    /// sheet offers them. The black card is used in football and hurling, not
+    /// in ladies football or camogie (confirmed by the owner).
+    public static func options(for matchType: MatchType) -> [CardType] {
+        switch matchType {
+        case .football, .hurling: [.yellow, .black, .red]
+        case .ladiesFootball, .camogie: [.yellow, .red]
+        }
+    }
 
     /// The name to show.
     public var displayName: String {
@@ -40,8 +47,9 @@ extension MatchEvent {
 }
 
 extension Match {
-    /// Sets a recorded foul's outcome, card, player (one of that team's, or
-    /// `nil`) and note (blank becomes `nil`).
+    /// Sets a recorded foul's outcome, card (one of `CardType.options(for:)`,
+    /// or the card it already has), player (one of that team's, or `nil`) and
+    /// note (blank becomes `nil`).
     @discardableResult
     public mutating func updateFoul(
         _ id: EventID,
@@ -51,7 +59,8 @@ extension Match {
         note: String?
     ) -> Bool {
         guard let index = events.firstIndex(where: { $0.id == id }),
-              case .foul(let side, _, _, _) = events[index].kind,
+              case .foul(let side, _, _, let current) = events[index].kind,
+              card.map({ CardType.options(for: matchType).contains($0) || $0 == current }) ?? true,
               isPlayer(player, on: side)
         else { return false }
         events[index].kind = .foul(side: side, player: player, outcome: outcome, card: card)
