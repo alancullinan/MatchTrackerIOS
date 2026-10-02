@@ -25,6 +25,7 @@ A native SwiftUI iOS app for tracking Gaelic games matches, succeeding the owner
 | Picking the scorer | A team-sheet layout (forwards at the top, subs below) with number, first name and surname | Faster than scrolling a list of 30; surnames are often shared within a team |
 | Scorer sheet for each team | Opens for both teams by default, with a per-team switch to stop asking | The owner knows home names but often only opposition numbers; names can be added to the team sheet later and show on earlier scores |
 | Misses | Under More with fouls, cards and subs; same sheet as a score (Wide / Saved / Short / Post) | A miss is an event like the others and needs the player and shot type, so no separate button or hidden press-and-hold |
+| Team colours | A fixed palette (`KitColor`, 12 colours) with a main and an optional second colour per team, stored with the match | Covers the county and club colours with one tap each, and we control how each looks so all read in sunlight; arbitrary colours would need a colour wheel and could be unreadable. A colour is only a case name, so the palette can grow |
 | Main tool | Claude Code in Terminal; Xcode for Previews, the Simulator and devices | Claude Code reads `CLAUDE.md` automatically, handles git and PRs, and runs builds and tests; GitHub is the shared record for every session |
 
 ## Workflow
@@ -67,7 +68,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
   - [x] Decide how events are stored (one SwiftData model per event, or the event list encoded on the match) and record the choice in the Decisions table: encoded on the match
 - [x] Home and match list with filter (the match list is the home screen)
 - [x] Match create/edit form (teams, code, competition, date, venue, referee; no period lengths). Both teams must be named; the code can't change once the match has started
-- [ ] Team colours: chosen per team in the match form (needed by the match screen's tinted team cards)
+- [x] Team colours: chosen per team in the match form (needed by the match screen's tinted team cards). A fixed palette of 12 kit colours; a main colour and an optional second
 - [ ] Match details: scoreboard, wall-clock timer, period transitions
 - [ ] Score entry (goal, point, two-pointer, misses, shot types)
 - [ ] Foul/card, kickout, substitution and note entry

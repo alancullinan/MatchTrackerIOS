@@ -27,6 +27,8 @@ enum SampleMatches {
         live.endPeriod(at: now.addingTimeInterval(-1200))
         live.start(at: now.addingTimeInterval(-600))
         live.record(shot(.team2, .point), at: now.addingTimeInterval(-300))
+        live.team1.colors = TeamColors(.orange, .green)
+        live.team2.colors = TeamColors(.navy, .blue)
         try context.store(live)
 
         // Paused in the first half.
@@ -35,12 +37,16 @@ enum SampleMatches {
         paused.start(at: now.addingTimeInterval(-900))
         paused.record(shot(.team1, .point), at: now.addingTimeInterval(-800))
         paused.pause(at: now.addingTimeInterval(-500))
+        // Only one team has colours.
+        paused.team1.colors = TeamColors(.white)
         try context.store(paused)
 
         // Full time, a week ago.
         var fullTime = Match.new(matchType: .camogie, team1Name: "Lucan Sarsfields", team2Name: "Cuala",
                                  competition: "Minor Cup", date: now.addingTimeInterval(-7 * day))
         play(&fullTime, from: now.addingTimeInterval(-7 * day), team1: [.goal, .point, .point], team2: [.point])
+        fullTime.team1.colors = TeamColors(.green, .gold)
+        fullTime.team2.colors = TeamColors(.red, .white)
         try context.store(fullTime)
 
         // Full time after extra time, no competition.
