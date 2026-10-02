@@ -16,7 +16,9 @@ Other MatchTracker repos exist (`MatchTracker`, the original 2025 Swift app, and
 
 - Most coding happens in **Claude Code in Terminal** on the Mac, run from the repo root. Xcode is for Previews, the Simulator, device runs and signing.
 - **GitHub is the shared space.** Everything lives in this repo - code, `CLAUDE.md`, `PLAN.md` - so any Claude Code session can read it, review PRs and discuss.
-- Work on a branch and open a PR; keep PRs to one checklist item or a small group of them.
+- Work on a branch and open a PR; keep PRs to one checklist item or a small group of them. PRs are squash-merged.
+- Run `swift test` (and build the app, where Xcode is available) before pushing. A PR description says which tests ran and where; if something couldn't be run, it says so.
+- Tick the item in `PLAN.md` in the same PR, and record any decision or deviation in `CLAUDE.md` or `PLAN.md`.
 - Never include an AI model name in commits, PRs or code comments.
 
 ## Architecture
@@ -32,11 +34,27 @@ MatchCore/                      local Swift package - the domain layer (linked a
     PWA/                        one-off importer for the owner's PWA backup (isolated; see below)
   Tests/MatchCoreTests/
     Fixtures/                   the owner's PWA backup, anonymised - used only by importer tests
+README.md                       short overview for the GitHub page
 CLAUDE.md, PLAN.md              repo root - Claude in Xcode does not show these in the project
                                 navigator; read them from here at the start of each task
 ```
 
 The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Drive): git commits fail with "Resource deadlock avoided" and the repo can be corrupted. Keep it in e.g. `~/Developer/MatchTrackerIOS`.
+
+### MatchCore at a glance
+
+| File (`Sources/MatchCore/Model/`) | What it holds |
+| --- | --- |
+| `Match.swift` | `Match` (teams, events, clock, `legacyID`, `liveShareID`), `Match.new(...)`, `match[.team1]` |
+| `Team.swift`, `Player.swift`, `TeamSide.swift` | 30-player rosters (`Team.roster`), optional names, `.team1` / `.team2` |
+| `MatchEvent.swift` | `MatchEvent` and its `Kind` (shot, foul, card, kickout, substitution, note, periodEnd); `side` and `type` |
+| `MatchClock.swift` | Wall-clock timer: `elapsed(at:)`, `start(at:)`, `pause(at:)` |
+| `MatchPeriods.swift` | `isPlaying`, `displayName`, `match.start/pause/endPeriod(at:)`, `match.record(_:note:at:)`, `canRecordEvents`, `nextPlayingPeriod` |
+| `EventOrder.swift` | `eventsInOrder`, `eventsNewestFirst`, `score(_:through:)` (score at any event) |
+| `Score.swift` | `Score` (goals, points, two-pointers, total, "1-05"), `match.score(_:)`, `MatchType.allowsTwoPointers` |
+| `Stats.swift` | `match.stats(_:)` → `TeamStats`: shooting, per-player stats with score by shot type, fouls, cards, substitutions |
+| `PlayerPanel.swift` | 30-slot panels (`PlayerPanel.empty`) |
+| `Identifiers.swift`, `Enums.swift` | Typed UUID ids; the enums |
 
 ### MatchCore rules
 - **Foundation only.** Never import SwiftUI, SwiftData, UIKit or any Apple-platform-only framework. It must build and test with `swift test` on macOS *and* Linux, so Claude Code cloud sessions can run its tests.
@@ -54,7 +72,15 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
   - Starting a running clock or pausing a paused one changes nothing, so a double-tap or a repeated pause can never add time twice.
 - **Enums are stored by case name** (`firstHalf`, `fullTimeAfterExtraTime`, `foul`). Once matches are saved a case name is permanent: add cases, never rename them. Text shown to people comes from `displayName`.
 - **All match logic lives here**, not in views: scoring, period transitions, event sorting, stats. Views call it; they do not re-implement it.
+- **Time is passed in**, never read inside `MatchCore`: anything time-dependent takes `at now: Date`. The app passes `Date()`; tests pass fixed dates. Never call `Date()` in `MatchCore`.
+- **State changes are safe to repeat.** Methods that change a match return `Bool` (or an optional) and do nothing when they don't apply, so the UI can call them from any button without checking first.
 - Every logic change comes with a test.
+
+### Tests
+- Swift Testing (`import Testing`, `@Test`, `#expect`, `#require`), one file per area (`ScoreTests.swift`, `StatsTests.swift`, ...). Test names read as sentences: `pausingAPausedClockChangesNothing`.
+- `#expect` cannot call a `mutating` method; store the result first (`let started = match.start(at: t)` then `#expect(started)`).
+- Use whole-second fixed dates so values survive JSON exactly.
+- `loadFixture("pwa-backup")` loads the PWA fixture; only importer tests use it.
 
 ### App rules
 - iOS 17+, SwiftUI, `NavigationStack`, `@Observable`.
@@ -89,6 +115,8 @@ Rules of the sport and lessons from real bugs - keep them whatever the UI looks 
 - **There is no step to finish a match.** After the 2nd Half the match is at Full Time, which is the end of it unless extra time is started from there. After Extra Time 2nd Half it moves to `.fullTimeAfterExtraTime`, shown as "Full Time (AET)".
 - The timer is **wall-clock based**: running time = banked seconds + (now − `runningSince`), never a tick counter. This is what lets a Live Activity show a clock without the app running.
 
+- Stats: accuracy is scored shots / all shots, and is `nil` (not 0%) with no shots. Players are ranked by score, then jersey number; shots without a player are grouped last. Stats work on any set of events, so a single period can be shown.
+
 **Players and panels**
 - Each team has 30 players, jersey numbers 1-30; names are optional.
 - A panel has **exactly 30 fixed slots**; the slot is the jersey number. Empty slots are kept; panels are never sorted or compacted.
@@ -110,5 +138,12 @@ The app is used one-handed, on a sideline, often in rain or sun, while watching 
 
 ## Commands
 
-- `MatchCore` tests: `cd MatchCore && swift test` (macOS or Linux).
+- `MatchCore` tests: `cd MatchCore && swift test` (macOS or Linux). Needs Swift 6.2 (Xcode 26 on the Mac).
+- In a Claude Code cloud session (Linux), install Swift first if `swift` is missing - the environment's network allows `download.swift.org`:
+  ```bash
+  apt-get install -y -qq binutils libc6-dev libcurl4-openssl-dev libedit2 libgcc-13-dev libpython3-dev \
+    libsqlite3-0 libstdc++-13-dev libxml2-dev libncurses-dev libz3-dev pkg-config tzdata unzip zlib1g-dev
+  cd /opt && curl -fsSL https://download.swift.org/swift-6.2-release/ubuntu2404/swift-6.2-RELEASE/swift-6.2-RELEASE-ubuntu24.04.tar.gz | tar xz
+  ln -sf /opt/swift-6.2-RELEASE-ubuntu24.04/usr/bin/* /usr/local/bin/
+  ```
 - App: build and test from Xcode (⌘U), or `xcodebuild test -project MatchTracker/MatchTracker.xcodeproj -scheme MatchTracker -destination 'platform=iOS Simulator,name=iPhone 17'`.

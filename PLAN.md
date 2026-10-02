@@ -31,7 +31,7 @@ Claude Code in Terminal does the work; Xcode is for looking at and running the a
 
 Don't let Claude Code and Claude in Xcode edit the same files at the same time. Decisions that matter go into `CLAUDE.md` or this file, not just a chat.
 
-## Phase 0: Setup
+## Phase 0: Setup - complete
 
 - [x] Create the GitHub repo
 - [x] Add `CLAUDE.md` and `PLAN.md`
@@ -40,7 +40,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] Add a local Swift package `MatchCore` at the repo root (File > New > Package) and link it to the app target
 - [x] Export a few real matches from the PWA into `MatchCore/Tests/MatchCoreTests/Fixtures/`
 
-## Phase 1: Domain (`MatchCore`)
+## Phase 1: Domain (`MatchCore`) - complete
 
 - [x] Enums (now the app's own case names; the PWA's strings live in `PWA/`)
 - [x] PWA backup types that round-trip the fixture (string-or-number ids, nulls, unknown keys)
@@ -55,15 +55,16 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 ## Phase 2: Core tracking (MVP)
 
+- [ ] Add GitHub Actions CI (macOS: build the app, run `MatchCore` tests), so every app PR is checked from the start
 - [ ] SwiftData models (CloudKit-compatible, see `CLAUDE.md`) and mapping to/from `MatchCore`; stored on the device only until iCloud is turned on in Phase 4
+  - Decide in this PR how events are stored (one SwiftData model per event, or the event list encoded on the match) and record the choice in the Decisions table
 - [ ] Home and match list with filter
-- [ ] Match create/edit form
+- [ ] Match create/edit form (teams, code, competition, date, venue, referee; no period lengths)
 - [ ] Match details: scoreboard, wall-clock timer, period transitions
 - [ ] Score entry (goal, point, two-pointer, misses, shot types)
 - [ ] Foul/card, kickout, substitution and note entry
 - [ ] Events list with edit/delete
 - [ ] Time/period editor
-- [ ] Add GitHub Actions CI (macOS: build app, run tests)
 
 ## Phase 3: Players
 
@@ -80,7 +81,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 ## Phase 5: Sharing and stats
 
-- [ ] Statistics screen
+- [ ] Statistics screen (on `match.stats(_:)`)
 - [ ] 800x800 event share images (`ImageRenderer`)
 - [ ] Live score sharing (approach to decide)
 
