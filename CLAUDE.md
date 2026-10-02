@@ -92,7 +92,8 @@ These are rules of the sport and lessons from real bugs - keep them whatever the
 - Scoring: goal = 3, point = 1, two-pointer = 2. Two-pointers exist for Football and Ladies Football, not Hurling or Camogie (confirmed by the owner). In the PWA a two-pointer is recorded by tapping Point, then choosing "2 Pointer" in the score modal's Score Type toggle.
 - Events can be recorded only in playing periods: 1st Half, 2nd Half, Extra Time 1st Half, Extra Time 2nd Half.
 - Ending a playing period automatically records a period-end event with the period that ended and its time. The score at that point is derived from the earlier events, never stored, so it stays correct after edits.
-- Events sort by period order, then `timeElapsed`; newest first in the event list, oldest first for exports and sharing. Sorting must stay correct after time or period edits.
+- Events sort by period order, then time; newest first in the event list, oldest first for exports and sharing. A period end is always last in its period, even if an edited event's time is later. Events at the same moment keep recorded order. Sorting is computed (`Match.eventsInOrder`), so it stays correct after time or period edits.
+- Periods (`MatchPeriods.swift`): `start` begins the next playing period from a break at 0:00, or resumes a paused one; `endPeriod` records the period end and moves to the following break (Match Over after Extra Time 2nd Half); `finish` ends the match at Full Time. Each returns `false` and changes nothing when it doesn't apply. Unlike the PWA, finishing at Full Time records no event: no playing period ended there.
 - The timer is **wall-clock based**: running time = now − `periodStartTimestamp`, never a tick counter. This is what lets a Live Activity show a clock without the app running.
 
 **Players and panels**
