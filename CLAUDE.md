@@ -79,7 +79,8 @@ Traps in the PWA format, all handled in `PWA/` and nowhere else:
 - `MatchPeriod` raw values are display strings (`"1st Half"`, `"Half Time"`, ...); other enums are camelCase (`foulConceded`, `twoPointer`, `ladiesFootball`). The shared enums in `MatchCore` keep these raw values, which is harmless.
 - IDs are strings (`"1727771234567-123456"`) except period-end events, whose ids are numbers.
 - Events are one flat object with many `null` fields; period-end events omit most fields. Unknown keys must not fail an import.
-- A PWA `periodEnd` event's `period` is the period being **entered** (`"Half Time"`); the importer converts it to the period that ended.
+- A PWA `periodEnd` event's `period` is the period being **entered** (`"Half Time"`); the importer converts it to the period that ended. `"Match Over"` ends Extra Time 2nd Half only if the match went to extra time; straight after Full Time (extra time off) it ends nothing, so the importer drops it with a warning.
+- PWA dates are a bare `"YYYY-MM-DD"`; the importer stores midday on that day in the given time zone.
 - Unnamed players are stored as `"No.<jersey number>"`; the importer converts that to `nil`.
 - `timeElapsed` / `elapsedTime` are seconds within the period; `periodStartTimestamp` is epoch milliseconds or `null`.
 
