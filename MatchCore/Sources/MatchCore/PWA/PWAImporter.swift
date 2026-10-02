@@ -114,6 +114,7 @@ public enum PWAImporter {
             clock.runningSince = Date(timeIntervalSince1970: Double(start) / 1000)
         }
 
+        // halfLength and extraHalfLength are ignored: periods have no set length.
         return Match(
             legacyID: pwa.id,
             matchType: pwa.matchType,
@@ -121,8 +122,6 @@ public enum PWAImporter {
             date: try date(of: pwa, timeZone: timeZone),
             venue: pwa.venue,
             referee: pwa.referee,
-            halfLength: pwa.halfLength,
-            extraHalfLength: pwa.extraHalfLength,
             team1: team1,
             team2: team2,
             events: events,

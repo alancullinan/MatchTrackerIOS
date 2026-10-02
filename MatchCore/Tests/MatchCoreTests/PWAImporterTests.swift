@@ -15,7 +15,7 @@ private func backup(_ json: String) throws -> PWABackup {
 /// A one-match backup. Team ids are "a" and "b"; players are "a1"/"a2" and "b1".
 private func oneMatch(events: String = "[]", extra: String = "", panels: String = "[]", lastSelected: String = "{}") throws -> PWABackup {
     try backup("""
-        {"matches":[{"id":"1754435709770-961121","dateTime":"2025-08-10","matchType":"football","extraHalfLength":10\(extra),
+        {"matches":[{"id":"1754435709770-961121","dateTime":"2025-08-10","matchType":"football"\(extra),
           "team1":{"id":"a","name":"Team A","players":[{"id":"a1","name":"No.1","jerseyNumber":1},{"id":"a2","name":" Seán ","jerseyNumber":2}]},
           "team2":{"id":"b","name":"Team B","players":[{"id":"b1","name":"No.1","jerseyNumber":1}]},
           "events":\(events)}],
@@ -186,12 +186,10 @@ private func oneMatch(events: String = "[]", extra: String = "", panels: String 
 }
 
 @Test func otherMatchFieldsCarryOver() throws {
-    let match = try #require(try PWAImporter.convert(oneMatch(extra: #","competition":"Junior C","venue":"Venue 1","referee":"Referee 1","halfLength":35,"shareId":"abc","isBroadcasting":true"#)).matches.first)
+    let match = try #require(try PWAImporter.convert(oneMatch(extra: #","competition":"Junior C","venue":"Venue 1","referee":"Referee 1","shareId":"abc","isBroadcasting":true"#)).matches.first)
     #expect(match.legacyID == "1754435709770-961121")
     #expect(match.matchType == .football)
     #expect([match.competition, match.venue, match.referee] == ["Junior C", "Venue 1", "Referee 1"])
-    #expect(match.halfLength == 35)
-    #expect(match.extraHalfLength == 10)
     #expect(match.liveShareID == "abc")
 }
 

@@ -9,10 +9,6 @@ public struct Match: Hashable, Sendable, Codable {
     public var date: Date
     public var venue: String
     public var referee: String
-    /// Minutes.
-    public var halfLength: Int
-    /// Minutes.
-    public var extraHalfLength: Int
     public var team1: Team
     public var team2: Team
     public var events: [MatchEvent]
@@ -28,8 +24,6 @@ public struct Match: Hashable, Sendable, Codable {
         date: Date,
         venue: String,
         referee: String,
-        halfLength: Int,
-        extraHalfLength: Int,
         team1: Team,
         team2: Team,
         events: [MatchEvent] = [],
@@ -43,8 +37,6 @@ public struct Match: Hashable, Sendable, Codable {
         self.date = date
         self.venue = venue
         self.referee = referee
-        self.halfLength = halfLength
-        self.extraHalfLength = extraHalfLength
         self.team1 = team1
         self.team2 = team2
         self.events = events
@@ -53,7 +45,6 @@ public struct Match: Hashable, Sendable, Codable {
     }
 
     /// A match not yet started, with two full rosters of unnamed players.
-    /// Default half lengths are the PWA's: 30 and 10 minutes.
     public static func new(
         matchType: MatchType,
         team1Name: String,
@@ -61,9 +52,7 @@ public struct Match: Hashable, Sendable, Codable {
         competition: String = "",
         date: Date,
         venue: String = "",
-        referee: String = "",
-        halfLength: Int = 30,
-        extraHalfLength: Int = 10
+        referee: String = ""
     ) -> Match {
         Match(
             matchType: matchType,
@@ -71,8 +60,6 @@ public struct Match: Hashable, Sendable, Codable {
             date: date,
             venue: venue,
             referee: referee,
-            halfLength: halfLength,
-            extraHalfLength: extraHalfLength,
             team1: .roster(name: team1Name),
             team2: .roster(name: team2Name)
         )

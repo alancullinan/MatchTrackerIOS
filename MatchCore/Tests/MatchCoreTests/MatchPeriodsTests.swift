@@ -70,8 +70,7 @@ private let point = MatchEvent.Kind.shot(side: .team1, player: nil, outcome: .po
 }
 
 @Test func anyMatchCanGoToExtraTime() {
-    // The extra-time half length is only how long each half is; it never removes extra time.
-    var match = Match.new(matchType: .hurling, team1Name: "Team A", team2Name: "Team B", date: t0, extraHalfLength: 0)
+    var match = Match.new(matchType: .hurling, team1Name: "Team A", team2Name: "Team B", date: t0)
     match.start(at: at(0)); match.endPeriod(at: at(10)); match.start(at: at(20)); match.endPeriod(at: at(30))
     let started = match.start(at: at(40))
     #expect(started)
