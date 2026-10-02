@@ -7,7 +7,8 @@ A native SwiftUI iOS app for tracking Gaelic games matches, succeeding the owner
 | Decision | Choice | Why |
 | --- | --- | --- |
 | Approach | Native SwiftUI rewrite (not a web-view wrapper) | A wrapper keeps WebKit's storage limits and web quirks, can't easily use iOS features (Live Activities, widgets, Watch, haptics), and risks App Store rejection as "just a website" |
-| Minimum iOS | 17 | Needed for SwiftData and `@Observable`, while still running on older phones; Xcode's default (26.2) would have left those out |
+| Minimum iOS | 26 | About 80% of iPhones by mid-2026 and rising (runs on iPhone 11 and later). Gives the current design APIs and the newest SwiftData fixes (early iOS 17 had data-loss bugs), with no version checks. Raised from 17 before any release, while it was free to change |
+| Tooling | Xcode 27, Swift 6.4; Claude Code connected to Xcode's MCP server | Current toolchain as of September 2026. The MCP connection lets Claude Code build, test and check Previews on the Mac itself |
 | Persistence | SwiftData, synced to each user's private iCloud database (CloudKit) | One store avoids the PWA's data-loss bug (two stores out of step). iCloud syncs across devices and survives a lost phone, with no server, account system or cost, and works offline on the sideline |
 | Paid developer account | Not until Phase 4 (iCloud) | A free Apple ID covers building and running on the Simulator and your own phone; the paid account is only needed for iCloud, TestFlight and the App Store |
 | Domain logic | `MatchCore` local Swift package, Foundation only | Logic can be tested in seconds without the Simulator, builds and tests on Linux so cloud sessions can run the tests, and can be reused by a Watch app, widgets and Live Activities |

@@ -11,8 +11,8 @@ Work in progress. See [`PLAN.md`](PLAN.md) for what's done and what's next.
 
 ## Building
 
-- **Logic tests:** `cd MatchCore && swift test` (Swift 6.2).
-- **App:** open `MatchTracker/MatchTracker.xcodeproj` in Xcode 26 or later and run. iOS 17 or later.
+- **Logic tests:** `cd MatchCore && swift test` (Swift 6.4).
+- **App:** open `MatchTracker/MatchTracker.xcodeproj` in Xcode 27 or later and run. iOS 26 or later.
 
 ## Contributing
 

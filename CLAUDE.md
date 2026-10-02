@@ -21,6 +21,10 @@ Other MatchTracker repos exist (`MatchTracker`, the original 2025 Swift app, and
 - Tick the item in `PLAN.md` in the same PR, and record any decision or deviation in `CLAUDE.md` or `PLAN.md`.
 - Never include an AI model name in commits, PRs or code comments.
 
+### One-off setup on the Mac
+- **Xcode's MCP server**, so Claude Code can build, run tests, render Previews and use the Simulator itself: in Xcode open Settings → Intelligence and turn on **Xcode Tools**; then, in Terminal, `claude mcp add --transport stdio xcode -- xcrun mcpbridge` (check with `claude mcp list`). Xcode must be running with the project open. With it, check UI work in Previews or the Simulator before opening a PR.
+- **SwiftUI Pro skill** (optional, recommended): Paul Hudson's agent skill for current SwiftUI APIs, navigation, state and accessibility. In Claude Code: `/plugin marketplace add twostraws/SwiftUI-Agent-Skill`, then `/plugin install swiftui-pro@swiftui-agent-skill`.
+
 ## Architecture
 
 ```
@@ -85,7 +89,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 - `loadFixture("pwa-backup")` loads the PWA fixture; only importer tests use it.
 
 ### App rules
-- iOS 17+, SwiftUI, `NavigationStack`, `@Observable`.
+- iOS 26+, SwiftUI, `NavigationStack`, `@Observable`. No `#available` checks below iOS 26; seed Previews with preview traits (`PreviewModifier` with an in-memory container) and varied sample data.
 - **One persistent store: SwiftData, synced to the user's private iCloud database (CloudKit).** iCloud sync is part of that store, not a second one. Never add another store, cache or mirror of match data - a second store that falls out of step silently loses recent matches (it happened in the PWA).
 - **SwiftData models must stay CloudKit-compatible**, or sync silently stops working:
   - every stored property is optional or has a default value;
@@ -93,7 +97,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
   - every relationship is optional, and no `.deny` delete rules;
   - schema changes are additive only (add properties; never rename or remove one once shipped).
 - Each user's data lives in their own iCloud account; there is no shared server. Live score sharing, if added, sends only a snapshot of the score, never the match data.
-- **Storage (`MatchTracker/Storage/`)**: `StoredMatch` and `StoredPanel` are only how MatchCore values are saved; views and logic work with `Match` and `PlayerPanel`. Write with `context.store(match)` (updates the record with that id, or inserts one - ids are kept unique here, not by the schema) and read with `stored.match()`. Scalar fields are columns; rosters, events and panel slots are encoded with `StoredCoding` (JSON, sorted keys). This makes the `Codable` shape of `Player`, `MatchEvent` (including `Kind`'s case and label names) and `PanelSlot` a stored format: change it only additively, like the enums. Reading never guesses: an unknown case name or unreadable JSON throws `StoredDataError`, and nothing is overwritten with a default.
+- **Storage (`MatchTracker/Storage/`)**: `StoredMatch` and `StoredPanel` are only how MatchCore values are saved; views and logic work with `Match` and `PlayerPanel`. Write with `context.store(match)` (updates the record with that id, or inserts one - ids are kept unique here, not by the schema) and read with `stored.match()`. Scalar fields are columns; rosters, events and panel slots are encoded with `StoredCoding` (JSON, sorted keys). This is a deliberate exception to Apple's guidance to store your own types as models rather than encoded blobs: nothing ever queries inside events or rosters, and the list filters on columns. It makes the `Codable` shape of `Player`, `MatchEvent` (including `Kind`'s case and label names) and `PanelSlot` a stored format: change it only additively, like the enums. Reading never guesses: an unknown case name or unreadable JSON throws `StoredDataError`, and nothing is overwritten with a default.
 - Keep a match **self-contained** (its teams, players and events belong to it) so a single match can be shared later. How is undecided - see `PLAN.md`.
 - Never delete data that has not been verified - e.g. a migration writes, reads back and compares before removing anything.
 
@@ -141,13 +145,13 @@ The app is used one-handed, on a sideline, often in rain or sun, while watching 
 
 ## Commands
 
-- `MatchCore` tests: `cd MatchCore && swift test` (macOS or Linux). Needs Swift 6.2 (Xcode 26 on the Mac).
+- `MatchCore` tests: `cd MatchCore && swift test` (macOS or Linux). Needs Swift 6.2 or later; the project uses Swift 6.4 (Xcode 27 on the Mac).
 - In a Claude Code cloud session (Linux), install Swift first if `swift` is missing - the environment's network allows `download.swift.org`:
   ```bash
   apt-get install -y -qq binutils libc6-dev libcurl4-openssl-dev libedit2 libgcc-13-dev libpython3-dev \
     libsqlite3-0 libstdc++-13-dev libxml2-dev libncurses-dev libz3-dev pkg-config tzdata unzip zlib1g-dev
-  cd /opt && curl -fsSL https://download.swift.org/swift-6.2-release/ubuntu2404/swift-6.2-RELEASE/swift-6.2-RELEASE-ubuntu24.04.tar.gz | tar xz
-  ln -sf /opt/swift-6.2-RELEASE-ubuntu24.04/usr/bin/* /usr/local/bin/
+  cd /opt && curl -fsSL https://download.swift.org/swift-6.4.0-release/ubuntu2404/swift-6.4.0-RELEASE/swift-6.4.0-RELEASE-ubuntu24.04.tar.gz | tar xz
+  ln -sf /opt/swift-6.4.0-RELEASE-ubuntu24.04/usr/bin/* /usr/local/bin/
   ```
-- CI (`.github/workflows/ci.yml`) runs on every PR and push to `main`: `matchcore-linux` runs `swift test` in the `swift:6.2` container; `app-macos` runs `swift test`, then `xcodebuild test` (the app's `MatchTrackerTests`) on an available iPhone simulator. The `MatchTracker` scheme is shared (`xcshareddata/`) so CI can see it; keep it committed.
+- CI (`.github/workflows/ci.yml`) runs on every PR and push to `main`: `matchcore-linux` runs `swift test` in the `swift:6.4` container; `app-macos` runs `swift test`, then `xcodebuild test` (the app's `MatchTrackerTests`) on an available iPhone simulator. The `MatchTracker` scheme is shared (`xcshareddata/`) so CI can see it; keep it committed.
 - App: build and test from Xcode (⌘U), or `xcodebuild test -project MatchTracker/MatchTracker.xcodeproj -scheme MatchTracker -destination 'platform=iOS Simulator,name=iPhone 17'`.
