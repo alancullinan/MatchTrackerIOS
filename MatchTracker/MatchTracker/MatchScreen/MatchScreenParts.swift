@@ -320,29 +320,15 @@ struct MoreSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                row("Miss", detail: "Wide, saved, short or off the post", action: .miss(side)) {
-                    FlagIcon(fill: nil, pole: .primary)
-                }
-                row("Foul", detail: "A free or penalty, and any card", action: .foul(side)) {
-                    Image(systemName: "hand.raised.fill")
-                }
-                row("Kickout", detail: "Their own kickout, won or lost", action: .kickout(side)) {
-                    Image(systemName: "arrow.up.forward")
-                }
-                row("Substitution", detail: "Who came off and who came on", action: .substitution(side)) {
-                    Image(systemName: "arrow.left.arrow.right")
-                }
-                row("Note", detail: "Anything worth remembering", action: .note(side)) {
-                    Image(systemName: "text.bubble")
-                }
-
+                // First, and always available: names and numbers are often
+                // added before throw-in, while the event rows are disabled.
                 Section {
                     Button {
                         dismiss()
                         onTeamSheet()
                     } label: {
                         LabeledContent {
-                            Text("Names and numbers")
+                            Text("Add and name players")
                         } label: {
                             Label { Text("Team Sheet") } icon: {
                                 Image(systemName: "person.3").foregroundStyle(.primary).frame(width: 26, height: 26)
@@ -351,20 +337,34 @@ struct MoreSheet: View {
                     }
                     .tint(.primary)
                 }
+
+                Section {
+                    row("Miss", detail: "Wide, saved, short or off the post", action: .miss(side)) {
+                        FlagIcon(fill: nil, pole: .primary)
+                    }
+                    row("Foul", detail: "A free or penalty, and any card", action: .foul(side)) {
+                        Image(systemName: "hand.raised.fill")
+                    }
+                    row("Kickout", detail: "Their own kickout, won or lost", action: .kickout(side)) {
+                        Image(systemName: "arrow.up.forward")
+                    }
+                    row("Substitution", detail: "Who came off and who came on", action: .substitution(side)) {
+                        Image(systemName: "arrow.left.arrow.right")
+                    }
+                    row("Note", detail: "Anything worth remembering", action: .note(side)) {
+                        Image(systemName: "text.bubble")
+                    }
+                } footer: {
+                    if !canRecord {
+                        Text("Events can be recorded while the ball is in play.")
+                    }
+                }
             }
             .navigationTitle(teamName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", role: .cancel) { dismiss() }
-                }
-            }
-            .safeAreaInset(edge: .bottom) {
-                if !canRecord {
-                    Text("Events can be recorded while the ball is in play.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .padding()
                 }
             }
         }

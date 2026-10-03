@@ -100,6 +100,11 @@ struct MatchScreen: View {
                     Button("Adjust Clock", systemImage: "clock.arrow.2.circlepath") { editsClock = true }
                         .disabled(!match.clock.period.isPlaying)
                     Button("Edit Match", systemImage: "pencil") { isEditing = true }
+                    Section("Team Sheets") {
+                        ForEach(TeamSide.allCases, id: \.self) { side in
+                            Button(EventText.teamName(match[side]), systemImage: "person.3") { teamSheetFor = side }
+                        }
+                    }
                     Section("Scorer Sheet") {
                         ForEach(TeamSide.allCases, id: \.self) { side in
                             Toggle("Ask for \(EventText.teamName(match[side])) scorers", isOn: Binding(
