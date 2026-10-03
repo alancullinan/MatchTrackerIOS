@@ -32,7 +32,7 @@ struct MatchTrackerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MatchListView()
+            RootView()
         }
         .modelContainer(container)
     }
