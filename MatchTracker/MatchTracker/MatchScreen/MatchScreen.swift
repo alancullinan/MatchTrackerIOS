@@ -153,8 +153,8 @@ struct MatchScreen: View {
     /// The bottom of the screen, under the thumb: the last event.
     private var thumbZone: some View {
         lastEventCard
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 8)
+            .padding(.top, 8)
     }
 
     @ViewBuilder

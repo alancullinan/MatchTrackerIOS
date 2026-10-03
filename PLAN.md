@@ -75,14 +75,14 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
   - [x] Decide how events are stored (one SwiftData model per event, or the event list encoded on the match) and record the choice in the Decisions table: encoded on the match
 - [x] Home and match list with filter (the match list is the home screen)
 - [x] Match create/edit form (teams, code, competition, date, venue, referee; no period lengths). Both teams must be named; the code can't change once the match has started
-- [x] Team colours: chosen per team in the match form (needed by the match screen's tinted team cards). A fixed palette of 12 kit colours; a main colour and an optional second
+- [x] Team colours: chosen per team in the match form (shown as a badge on the match screen's team cards). A fixed palette of 12 kit colours; a main colour and an optional second
 - [x] Match details: scoreboard, wall-clock timer, period transitions. The match screen to the agreed design; goal and point flags record a score straight away; Undo for the last event, a period end or a period start
 - [x] Score entry (goal, point, two-pointer, misses, shot types). The scorer sheet after each flag tap (unless switched off per team); Miss under More; Details reopens a recent shot
 - [x] Foul/card, kickout, substitution and note entry. Each is recorded at the tap from More, then its sheet opens for the details; Details reopens it. A match-wide note is in the ••• menu
-- [ ] Another pass on the match screen's look, with the owner, once tracking works end to end: the glass restyle in `design/match-screen-glass/`, in three PRs
+- [x] Another pass on the match screen's look, with the owner, once tracking works end to end: the glass restyle in `design/match-screen-glass/`, in three PRs
   - [x] Grass background, always dark, glass top bar and the clock capsule
   - [x] The clock button: tap to pause or resume, hold for the next step
-  - [ ] Team cards and the last-event card
+  - [x] Team cards and the last-event card
 - [x] Events list with edit/delete: newest first, grouped by period; tap to edit (details and time), swipe to delete. Opened from the toolbar
 - [x] Time/period editor: tap the clock (or ••• > Adjust Clock) to move it on or back; any event's period and time can be changed from its sheet, including a period end's time
 
