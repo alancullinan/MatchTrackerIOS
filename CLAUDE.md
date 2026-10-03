@@ -71,7 +71,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | `MatchEvent.swift` | `MatchEvent` and its `Kind` (shot, foul, card, kickout, substitution, note, periodEnd); `side` and `type` |
 | `MatchClock.swift` | Wall-clock timer: `elapsed(at:)`, `start(at:)`, `pause(at:)` |
 | `MatchPeriods.swift` | `isPlaying`, `displayName`, `match.start/pause/endPeriod(at:)`, `match.record(_:note:at:)`, `canRecordEvents`, `nextPlayingPeriod` |
-| `MatchSteps.swift` | `MatchStep` and `nextStep` / `takeNextStep(at:)` (the main button), `undoLastEvent()`, `undoPeriodStart()`, `lastPeriodEnd`, `MatchClock.text(seconds:)`, `MatchEvent.minute` |
+| `MatchSteps.swift` | `MatchStep` and `nextStep` / `takeNextStep(at:)` (the clock button's hold), `undoLastEvent()`, `undoPeriodStart()`, `lastPeriodEnd`, `MatchClock.text(seconds:)`, `MatchEvent.minute` |
 | `ShotDetails.swift` | `ShotOutcome.alternatives(in:)`, `ShotType.options(for:)` (45 or 65), `match.updateShot(...)`, `match.deleteEvent(_:)`, `match.event(_:)` |
 | `EventDetails.swift` | `match.updateFoul/updateKickout/updateSubstitution/updateNote(...)`, `CardType.options(for:)` (no black card in ladies football or camogie), `CardType`/`FoulOutcome.displayName` |
 | `TimeEditing.swift` | `match.adjustClock(by:at:)`, `playedPeriods`, `timeLimits(for:in:)`, `updateTime(_:period:time:)`, `Match.maxEventTime` |
@@ -180,7 +180,8 @@ The agreed design is the glass restyle: https://claude.ai/artifact/2QBd8XiVyBibp
 - Top bar: the system toolbar (on iOS 26 a round glass Back button, and the trailing items grouped in one glass capsule). Back on the left; the Events list and the ••• menu (match note, adjust clock, edit match, scorer settings) on the right. Stats joins them when its screen is built (Phase 5), as will share and live link.
 - Competition name, small. Then the clock capsule: a glass capsule with the period name (gold, "· PAUSED" while paused) over the big clock on the left and the round yellow clock button on the right, and a hint line underneath. During a break the clock shows how long the last half ran, e.g. "31 min", never 00:00. Tapping the clock text adjusts it.
 - Two team cards, stacked. Each: team name centred on top; then **green goal flag · score with the total underneath · white point flag** in one row; one **More** button below. No two-pointer (orange) flag on the card.
-- Thumb zone at the bottom: the last event (with Undo and Details for a few seconds after each entry), and one big button that always says the next step (Start 1st Half, End 1st Half, Start 2nd Half, End 2nd Half, Start Extra Time, ...), with a pause/resume button beside it during play. Flags are disabled when the ball isn't in play.
+- **The clock button** (yellow, in the clock capsule) is the one control for the clock and the periods: **tap** pauses or resumes (only in a playing period); **hold ~0.7 s** takes the next step (Start 1st Half, End 1st Half, Start 2nd Half, ..., Start Extra Time). While held a white ring fills; released early it is a tap; a completed hold gives a success haptic and never also taps. The hint under the capsule says what each does ("Tap to pause · Hold to end 1st half"). After extra time it shows a tick and does nothing. VoiceOver: the label is the tap action, the step is a named action (and the default action in a break). The decision lives in `ClockControl` and `ClockPress` (`ClockButton.swift`), tested in `ClockControlTests`; the hold is timed by a task, not the gesture, so a release always comes after a completed hold.
+- Thumb zone at the bottom: the last event, with Undo and Details for a few seconds after each entry (including a period start or end). Flags are disabled when the ball isn't in play.
 
 **Recording a score**
 1. Tapping a flag counts the score immediately, at that moment.
@@ -201,7 +202,7 @@ The agreed design is the glass restyle: https://claude.ai/artifact/2QBd8XiVyBibp
 - **Kickout**: the team taking it; recorded as won, the sheet switches to lost (a lost kickout has no player).
 - **Substitution**: one team sheet; pick the player coming off, then it moves on to the player coming on. Picking the same player for both moves them across.
 - **Events list**: from the toolbar (not by tapping the last-event card: on smaller phones it covers the second team's More button until scrolled, so a missed tap would open the list). Newest first, by period; tap an event for its sheet, swipe to delete (not a period end).
-- **Times**: every event's sheet has a collapsed "When" to change its period and time. Tapping the clock adjusts it; the period only changes through the main button.
+- **Times**: every event's sheet has a collapsed "When" to change its period and time. Tapping the clock adjusts it; the period only changes through the clock button.
 - **Team sheet**: More › Team Sheet, available any time (the event rows are disabled while the ball isn't in play; this one isn't). A name per number, Next moves to the next number, "Add Player 31" up to 40, swipe to remove an unused added player. Nothing saved until Done; swipe-down is blocked while there are changes.
 - **Note**: a team's from More, the match's from the ••• menu. The text is saved however the sheet closes; Cancel or blank text deletes it.
 

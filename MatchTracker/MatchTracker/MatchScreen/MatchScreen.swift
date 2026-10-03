@@ -40,7 +40,7 @@ struct MatchScreenDestination: View {
 private struct SheetTeam: Identifiable { let side: TeamSide; var id: TeamSide { side } }
 private struct SheetEvent: Identifiable { let eventID: EventID; var id: EventID { eventID } }
 
-/// The live match: clock, both teams with their flags, and the next step.
+/// The live match: the clock with its button, both teams with their flags, and the last event.
 struct MatchScreen: View {
     @Bindable var session: MatchSession
 
@@ -64,9 +64,10 @@ struct MatchScreen: View {
                         .foregroundStyle(.white.opacity(0.85))
                         .multilineTextAlignment(.center)
                 }
-                ClockView(match: match, hint: clockHint,
+                let control = ClockControl(match: match)
+                ClockView(match: match, hint: control.hint,
                           onAdjust: { if match.clock.period.isPlaying { editsClock = true } }) {
-                    clockButton
+                    ClockButton(control: control) { session.perform($0, at: .now) }
                 }
                 ForEach(TeamSide.allCases, id: \.self) { side in
                     TeamCard(team: match[side], score: match.score(side), flagsEnabled: match.canRecordEvents,
@@ -149,47 +150,11 @@ struct MatchScreen: View {
         }
     }
 
-    /// The bottom of the screen, under the thumb: the last event and the next step.
+    /// The bottom of the screen, under the thumb: the last event.
     private var thumbZone: some View {
-        VStack(spacing: 10) {
-            lastEventCard
-            HStack(spacing: 10) {
-                Button {
-                    session.perform(.nextStep, at: .now)
-                } label: {
-                    Text((match.nextStep?.title ?? match.clock.period.displayName).uppercased())
-                        .font(MatchTheme.display(22, .bold))
-                        .tracking(2)
-                        .frame(maxWidth: .infinity, minHeight: 58)
-                        .foregroundStyle(match.nextStep == nil ? MatchTheme.muted : MatchTheme.goldInk)
-                        .background(match.nextStep == nil ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(MatchTheme.gold),
-                                    in: .rect(cornerRadius: 18))
-                }
-                .buttonStyle(.plain)
-                .disabled(match.nextStep == nil)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 8)
-    }
-
-    /// The gold button in the clock capsule: pauses and resumes play.
-    private var clockButton: some View {
-        let playing = match.clock.period.isPlaying
-        return Button {
-            session.perform(match.clock.isRunning ? .pause : .resume, at: .now)
-        } label: {
-            ClockButtonFace(systemImage: playing && match.clock.isRunning ? "pause.fill" : "play.fill")
-        }
-        .buttonStyle(.plain)
-        .disabled(!playing)
-        .accessibilityLabel(match.clock.isRunning ? "Pause clock" : "Resume clock")
-    }
-
-    private var clockHint: String {
-        guard match.clock.period.isPlaying else { return "" }
-        return match.clock.isRunning ? "Tap to pause" : "Tap to resume"
+        lastEventCard
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
     }
 
     @ViewBuilder
