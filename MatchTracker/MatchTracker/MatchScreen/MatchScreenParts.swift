@@ -241,6 +241,16 @@ struct EventIcon: View {
     }
 }
 
+/// The grab handle on the last-event card and the event drawer.
+struct DrawerHandle: View {
+    var body: some View {
+        Capsule()
+            .fill(.white.opacity(0.4))
+            .frame(width: 36, height: 5)
+            .accessibilityHidden(true)
+    }
+}
+
 /// The latest thing that happened, with Undo for a few seconds after each entry.
 struct LastEventCard: View {
     let title: String

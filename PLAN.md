@@ -35,6 +35,7 @@ A native SwiftUI iOS app for tracking Gaelic games matches, succeeding the owner
 | Main button | Tap pauses/resumes, hold (~0.7 s, with a fill ring and haptic) takes the next step | One control instead of two, and the hold makes accidental period changes rare; Undo still covers them |
 | Panels | Imported on the team sheet into the unsaved sheet; the picker suggests the team's last panel, or the one last used for a team of the same name; Save as New Panel turns a team sheet into a panel | The owner tracks the same club most weeks: the suggestion makes the import one tap, and names typed during a match can be kept for the next one without retyping |
 | App navigation | A tab bar: Matches, Panels, Settings; hidden on the match screen | The owner's choice after using the app on the phone: the places to go sit together at the bottom, in thumb reach, with room for Settings. The match screen keeps the whole screen. Replaces the Panels button in the match list's toolbar |
+| Events list | A drawer dragged up from the last-event card, opening up to the clock; replaces the Events toolbar button | The owner's choice after using the app on the phone: the list is where the thumb already is, and the clock stays in view while looking back. A drag, not a tap, so a missed tap on the card opens nothing. Built into the screen rather than a system sheet, which would block the scorer and More sheets and stay over pushed screens |
 | Main tool | Claude Code in Terminal; Xcode for Previews, the Simulator and devices | Claude Code reads `CLAUDE.md` automatically, handles git and PRs, and runs builds and tests; GitHub is the shared record for every session |
 
 ## Workflow
@@ -85,7 +86,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
   - [x] Grass background, always dark, glass top bar and the clock capsule
   - [x] The clock button: tap to pause or resume, hold for the next step
   - [x] Team cards and the last-event card
-- [x] Events list with edit/delete: newest first, grouped by period; tap to edit (details and time), swipe to delete. Opened from the toolbar
+- [x] Events list with edit/delete: newest first, grouped by period; tap to edit (details and time), swipe to delete. A drawer dragged up from the last-event card
 - [x] Time/period editor: tap the clock (or ••• > Adjust Clock) to move it on or back; any event's period and time can be changed from its sheet, including a period end's time
 
 ## Phase 3: Players

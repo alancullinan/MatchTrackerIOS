@@ -1,12 +1,12 @@
 import MatchCore
 import SwiftUI
 
-/// Every event in the match, newest first, grouped by period. Tap one to
-/// change its details or time; swipe to delete it.
+/// Every event in the match, newest first, grouped by period, shown in the
+/// match screen's event drawer. Tap one to change its details or time; swipe to delete it.
 struct EventListView: View {
     let session: MatchSession
-
-    @State private var editing: EventID?
+    /// Opens the event's details sheet.
+    let onSelect: (EventID) -> Void
 
     private var match: Match { session.match }
 
@@ -16,8 +16,9 @@ struct EventListView: View {
             ForEach(list.sections, id: \.period) { section in
                 Section(section.period.displayName) {
                     ForEach(section.events, id: \.id) { event in
-                        Button { editing = event.id } label: { row(event) }
+                        Button { onSelect(event.id) } label: { row(event) }
                             .tint(.primary)
+                            .listRowBackground(Color.clear)
                             .swipeActions {
                                 // A period end is part of the match's progress, so it can't be deleted here.
                                 if event.kind != .periodEnd {
@@ -30,17 +31,13 @@ struct EventListView: View {
                 }
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .overlay {
             if list.sections.isEmpty {
                 ContentUnavailableView("No Events Yet", systemImage: "list.bullet",
                                        description: Text("Scores, fouls and everything else appear here as they're recorded."))
             }
-        }
-        .navigationTitle("Events")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: Binding(get: { editing.map(EditedEvent.init) }, set: { editing = $0?.eventID })) { item in
-            EventDetailsSheet(session: session, eventID: item.eventID)
-                .matchSheetAppearance()
         }
     }
 
@@ -68,17 +65,16 @@ struct EventListView: View {
     }
 }
 
-private struct EditedEvent: Identifiable {
-    let eventID: EventID
-    var id: EventID { eventID }
-}
-
 #if DEBUG
 #Preview("Events") {
-    NavigationStack { EventListView(session: .preview(.fullTimeAfterExtraTime)) }
+    EventListView(session: .preview(.fullTimeAfterExtraTime), onSelect: { _ in })
+        .background { GrassBackground() }
+        .matchScreenAppearance()
 }
 
 #Preview("No events") {
-    NavigationStack { EventListView(session: .preview(.notStarted)) }
+    EventListView(session: .preview(.notStarted), onSelect: { _ in })
+        .background { GrassBackground() }
+        .matchScreenAppearance()
 }
 #endif

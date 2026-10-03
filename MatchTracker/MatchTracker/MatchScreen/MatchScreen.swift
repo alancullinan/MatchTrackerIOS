@@ -40,16 +40,28 @@ struct MatchScreenDestination: View {
 private struct SheetTeam: Identifiable { let side: TeamSide; var id: TeamSide { side } }
 private struct SheetEvent: Identifiable { let eventID: EventID; var id: EventID { eventID } }
 
-/// The live match: the clock with its button, both teams with their flags, and the last event.
+/// The live match: the clock with its button, both teams with their flags, and the
+/// last event, which drags up into a drawer of every event.
 struct MatchScreen: View {
     @Bindable var session: MatchSession
 
     @State private var isEditing = false
     @State private var moreFor: TeamSide?
-    @State private var showsEvents = false
+    /// Whether the event drawer is open, from the clock down.
+    @State private var showsEvents: Bool
+    /// Where the clock capsule ends, which is how far the drawer opens.
+    @State private var clockBottom: CGFloat = 0
+    /// The last-event card's height, kept clear below the team cards.
+    @State private var cardHeight: CGFloat = 0
     @State private var showsStats = false
     @State private var editsClock = false
     @State private var teamSheetFor: TeamSide?
+
+    /// `showsEvents` opens with the event drawer up, for Previews.
+    init(session: MatchSession, showsEvents: Bool = false) {
+        self.session = session
+        _showsEvents = State(initialValue: showsEvents)
+    }
 
     /// How long Undo stays on the last-event card after a change.
     private static let undoSeconds: Duration = .seconds(6)
@@ -70,6 +82,9 @@ struct MatchScreen: View {
                           onAdjust: { if match.clock.period.isPlaying { editsClock = true } }) {
                     ClockButton(control: control) { session.perform($0, at: .now) }
                 }
+                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(Self.screenSpace)).maxY } action: {
+                    clockBottom = $0
+                }
                 ForEach(TeamSide.allCases, id: \.self) { side in
                     TeamCard(team: match[side], score: match.score(side), flagsEnabled: match.canRecordEvents,
                              onScore: { session.perform(.score(side, $0), at: .now) },
@@ -80,24 +95,19 @@ struct MatchScreen: View {
             .padding(.bottom, 16)
         }
         .scrollBounceBehavior(.basedOnSize)
-        .safeAreaInset(edge: .bottom) { thumbZone }
+        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: cardHeight + 8) }
+        .overlay { thumbZone }
+        .coordinateSpace(.named(Self.screenSpace))
         .background { GrassBackground() }
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         // Glass on the grass reads best in dark, so this screen and its sheets always are.
         .matchScreenAppearance()
-        .navigationDestination(isPresented: $showsEvents) {
-            EventListView(session: session)
-                .matchScreenAppearance()
-        }
         .navigationDestination(isPresented: $showsStats) {
             StatsView(session: session)
                 .matchScreenAppearance()
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Events", systemImage: "list.bullet") { showsEvents = true }
-            }
             ToolbarItem(placement: .primaryAction) {
                 Button("Stats", systemImage: "chart.bar") { showsStats = true }
             }
@@ -165,11 +175,56 @@ struct MatchScreen: View {
         }
     }
 
-    /// The bottom of the screen, under the thumb: the last event.
+    private static let screenSpace = "matchScreen"
+
+    /// The bottom of the screen, under the thumb: the last event, which drags up
+    /// into the event drawer (open, it reaches the clock and the card stays under it).
     private var thumbZone: some View {
-        lastEventCard
-            .padding(.horizontal, 8)
-            .padding(.top, 8)
+        VStack(spacing: 8) {
+            if showsEvents {
+                eventDrawer
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            lastEventCard
+                .overlay(alignment: .top) { DrawerHandle().padding(.top, 6) }
+                .gesture(drawerDrag)
+                .accessibilityAction(named: showsEvents ? "Hide Events" : "Show Events") { setShowsEvents(!showsEvents) }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardHeight = $0 }
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, clockBottom + 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        // Nothing to list until something happens.
+        .onChange(of: match.events.isEmpty) { _, isEmpty in if isEmpty { setShowsEvents(false) } }
+    }
+
+    private var eventDrawer: some View {
+        VStack(spacing: 0) {
+            Button { setShowsEvents(false) } label: {
+                DrawerHandle()
+                    .frame(maxWidth: .infinity, minHeight: 28)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Hide Events")
+            .gesture(drawerDrag)
+            EventListView(session: session) { session.detailsEvent = $0 }
+        }
+        .matchGlass(in: .rect(cornerRadius: 28))
+    }
+
+    /// Up opens the drawer, down closes it. A drag, never a tap, so a missed tap
+    /// on the card (which can cover the second team's More button) opens nothing.
+    private var drawerDrag: some Gesture {
+        DragGesture(minimumDistance: 12).onEnded { drag in
+            let distance = drag.predictedEndTranslation.height
+            if distance < -40 { setShowsEvents(true) } else if distance > 40 { setShowsEvents(false) }
+        }
+    }
+
+    private func setShowsEvents(_ shows: Bool) {
+        guard shows != showsEvents, !shows || !match.events.isEmpty else { return }
+        withAnimation(.spring(duration: 0.35)) { showsEvents = shows }
     }
 
     @ViewBuilder
@@ -205,6 +260,10 @@ struct MatchScreen: View {
 
 #Preview("Not started, no colours") {
     NavigationStack { MatchScreen(session: .preview(.notStarted)) }
+}
+
+#Preview("Event drawer open") {
+    NavigationStack { MatchScreen(session: .preview(.secondHalf), showsEvents: true) }
 }
 
 #Preview("1st half, running") {
