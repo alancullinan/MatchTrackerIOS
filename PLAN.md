@@ -33,6 +33,7 @@ A native SwiftUI iOS app for tracking Gaelic games matches, succeeding the owner
 | Undo on the match screen | Undo covers the last event, ending a period (back into it, paused at its time) and starting one (back to the break, while nothing is recorded in it). It shows for 6 seconds after each change | A mistaken period change is the likeliest error on a sideline; undo keeps it one tap to fix without a confirmation on every period change |
 | Match screen look | The glass restyle (`design/match-screen-glass/`): a grass photo, always dark, system Liquid Glass panels, yellow accent, standard SF Pro | Chosen by the owner after trying mockups: glass on grass reads best in sunlight, and dark-only keeps the photo and glass consistent. Replaces the earlier pitch-green, light-and-dark design with condensed lettering |
 | Main button | Tap pauses/resumes, hold (~0.7 s, with a fill ring and haptic) takes the next step | One control instead of two, and the hold makes accidental period changes rare; Undo still covers them |
+| Panels | Imported on the team sheet into the unsaved sheet; the picker suggests the team's last panel, or the one last used for a team of the same name; Save as New Panel turns a team sheet into a panel | The owner tracks the same club most weeks: the suggestion makes the import one tap, and names typed during a match can be kept for the next one without retyping |
 | Main tool | Claude Code in Terminal; Xcode for Previews, the Simulator and devices | Claude Code reads `CLAUDE.md` automatically, handles git and PRs, and runs builds and tests; GitHub is the shared record for every session |
 
 ## Workflow
@@ -90,8 +91,8 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 - [x] Team rosters: 30 players, up to 40 added on demand; names editable any time from More › Team Sheet
 - [x] Player panels: list and editor (30 slots, up to 40 like rosters)
-- [ ] Import a panel into a team, before throw-in only
-- [ ] Remember the last panel per team per match
+- [x] Import a panel into a team, before throw-in only (from the team sheet; plus Save as New Panel)
+- [x] Remember the last panel per team per match (and suggest it for a team of the same name in later matches)
 
 ## Phase 4: Data
 

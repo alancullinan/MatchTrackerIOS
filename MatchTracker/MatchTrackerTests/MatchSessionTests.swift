@@ -279,4 +279,25 @@ struct MatchSessionTests {
         #expect(team.player(jersey: 1)?.name == "Aoife Casey")
         #expect(team.player(jersey: 31)?.name == "Ciara Byrne")
     }
+
+    @Test func aTeamSheetFromAPanelIsSavedWithItsLastPanel() throws {
+        var panel = PlayerPanel.empty(name: "Seniors")
+        var slots = panel.slots
+        slots[0].name = "Keeper"
+        panel.update(name: "Seniors", slots: slots)
+        let players = session.match.team1.players(importing: panel)
+
+        let saved = session.updateRoster(.team1, players: players, fromPanel: panel.id)
+        #expect(saved)
+        #expect(try stored().team1.players[0].name == "Keeper")
+        #expect(try stored().team1.lastPanelID == panel.id)
+    }
+
+    @Test func aPanelIsNotRememberedAfterThrowIn() throws {
+        session.perform(.nextStep, at: at(0))
+        let panel = PlayerPanel.empty(name: "Seniors")
+        let saved = session.updateRoster(.team1, players: session.match.team1.players, fromPanel: panel.id)
+        #expect(!saved)
+        #expect(try stored().team1.lastPanelID == nil)
+    }
 }
