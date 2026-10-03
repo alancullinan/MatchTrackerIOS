@@ -8,7 +8,7 @@ struct EventListTests {
 
     private func at(_ seconds: TimeInterval) -> Date { t0.addingTimeInterval(seconds) }
 
-    @Test func eventsAreGroupedByPeriodNewestFirst() throws {
+    @Test func eventsAreNewestFirstAcrossPeriods() throws {
         var match = Match.new(matchType: .football, team1Name: "A", team2Name: "B", date: t0)
         match.start(at: t0)
         let firstRecorded = match.record(.kickout(side: .team1, player: nil, won: true), at: at(60))
@@ -21,10 +21,7 @@ struct EventListTests {
         let thirdRecorded = match.record(.substitution(side: .team2, off: nil, on: nil), at: at(2500))
         let third = try #require(thirdRecorded)
 
-        let list = EventList(match)
-        #expect(list.sections.map(\.period) == [.secondHalf, .firstHalf])
-        #expect(list.sections[0].events.map(\.id) == [third.id])
-        #expect(list.sections[1].events.map(\.id) == [end.id, second.id, first.id])
+        #expect(EventList(match).events.map(\.id) == [third.id, end.id, second.id, first.id])
     }
 
     @Test func theEventOnTheCardIsLeftOut() throws {
@@ -37,15 +34,13 @@ struct EventListTests {
         let lastRecorded = match.record(.note(side: nil), note: "Wind", at: at(2500))
         let last = try #require(lastRecorded)
 
-        let list = EventList(match, excluding: last.id)
-        // The 2nd half had only that event, so its section goes too.
-        #expect(list.sections.map(\.period) == [.firstHalf])
-        #expect(list.sections[0].events.map(\.id).contains(first.id))
-        #expect(!list.sections.flatMap(\.events).contains { $0.id == last.id })
+        let ids = EventList(match, excluding: last.id).events.map(\.id)
+        #expect(ids.contains(first.id))
+        #expect(!ids.contains(last.id))
     }
 
-    @Test func aMatchWithNoEventsHasNoSections() {
+    @Test func aMatchWithNoEventsListsNothing() {
         let match = Match.new(matchType: .hurling, team1Name: "A", team2Name: "B", date: t0)
-        #expect(EventList(match).sections.isEmpty)
+        #expect(EventList(match).events.isEmpty)
     }
 }

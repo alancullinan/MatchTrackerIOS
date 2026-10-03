@@ -239,7 +239,7 @@ struct MatchScreen: View {
     /// Whether there's anything to list under the card. With only the card's
     /// event, there isn't, so the drawer stays closed.
     private var canOpenDrawer: Bool {
-        !EventList(match, excluding: cardEventID).sections.isEmpty
+        !EventList(match, excluding: cardEventID).events.isEmpty
     }
 
     /// Whether there's a last event (or a period start to undo) to show.
