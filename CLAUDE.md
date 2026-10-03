@@ -46,6 +46,7 @@ MatchTracker/                   Xcode project folder
     MatchScreen/                the match screen: `MatchSession` (applies, saves and undoes changes), theme, parts, `ScorerSheet`, `EventSheets` (foul, kickout, substitution and note sheets, and their shared parts, including the "When" time field), `EventListView` (+ `EventList`, its sections), `ClockEditor`, `EventText`
     Panels/                     player panels: `PanelList` (sort, save, delete), the list, the editor, `PanelPicker` and `PanelSuggestion`
     Players/                    `TeamSheetEditor` (a match's team sheet)
+    Stats/                      the statistics screen: `StatsTable` (rows and formatting, tested) and `StatsView`
     Teams/                      team colour badge and picker (`KitColor.color` lives here, not in MatchCore)
   MatchTrackerTests/            app tests (Swift Testing), run by CI
 MatchCore/                      local Swift package - the domain layer (linked as ../MatchCore)
@@ -79,7 +80,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | `TimeEditing.swift` | `match.adjustClock(by:at:)`, `playedPeriods`, `timeLimits(for:in:)`, `updateTime(_:period:time:)`, `Match.maxEventTime` |
 | `EventOrder.swift` | `eventsInOrder`, `eventsNewestFirst`, `score(_:through:)` (score at any event) |
 | `Score.swift` | `Score` (goals, points, two-pointers, total, "1-05"), `match.score(_:)`, `MatchType.allowsTwoPointers` |
-| `Stats.swift` | `match.stats(_:)` → `TeamStats`: shooting, per-player stats with score by shot type, fouls, cards, substitutions |
+| `Stats.swift` | `match.stats(_:)` / `stats(_:period:)` → `TeamStats`: shooting, per-player stats with score by shot type, fouls, cards, substitutions, own kickouts won/lost (`kickoutRetention`) |
 | `Roster.swift` | `match.updateRoster(_:players:)` (the team sheet editor's rules), `isReferenced(_:)`, `team.nextExtraPlayer()` |
 | `PanelImport.swift` | `team.players(importing:)`, `match.importPanel(_:into:)`, `canImportPanel` (before throw-in), `updateRoster(_:players:fromPanel:)` (remembers `lastPanelID`) |
 | `PlayerPanel.swift` | Panels of 30 slots, up to 40 (`PlayerPanel.empty`, `startingSize`, `maxSize`), `panel.update(name:slots:)` (the panel editor's rules), `nextExtraSlot()`, `namedCount` |
@@ -182,7 +183,7 @@ The agreed design is the glass restyle: https://claude.ai/artifact/2QBd8XiVyBibp
 - Each team has its own colours (chosen per team when creating the match), shown as a colour badge in the top-left corner of its card. The cards are plain glass, not tinted.
 
 **Layout, top to bottom**
-- Top bar: the system toolbar (on iOS 26 a round glass Back button, and the trailing items grouped in one glass capsule). Back on the left; the Events list and the ••• menu (match note, adjust clock, edit match, both team sheets, scorer settings) on the right. Stats joins them when its screen is built (Phase 5), as will share and live link.
+- Top bar: the system toolbar (on iOS 26 a round glass Back button, and the trailing items grouped in one glass capsule). Back on the left; Events, Stats and the ••• menu (match note, adjust clock, edit match, both team sheets, scorer settings) on the right. Share and live link join them later.
 - Competition name, small. Then the clock capsule: a glass capsule with the period name (gold, "· PAUSED" while paused) over the big clock on the left and the round yellow clock button on the right, and a hint line underneath. During a break the clock shows how long the last half ran, e.g. "31 min", never 00:00. Tapping the clock text adjusts it.
 - Two team cards, stacked. Each: colour badge · team name (centred) · total points pill ("32 pts") on top; the score ("1-05", gold hyphen) in the middle; one **+ More** button below. The round **green goal flag** and **white point flag** sit either side, centred on the whole card. No two-pointer (orange) flag on the card. Long scores ("12-21") shrink to fit between the flags.
 - **The clock button** (yellow, in the clock capsule) is the one control for the clock and the periods: **tap** pauses or resumes (only in a playing period); **hold ~0.7 s** takes the next step (Start 1st Half, End 1st Half, Start 2nd Half, ..., Start Extra Time). While held a white ring fills; released early it is a tap; a completed hold gives a success haptic and never also taps. The hint under the capsule says what each does ("Tap to pause · Hold to end 1st half"). After extra time it shows a tick and does nothing. VoiceOver: the label is the tap action, the step is a named action (and the default action in a break). The decision lives in `ClockControl` and `ClockPress` (`ClockButton.swift`), tested in `ClockControlTests`; the hold is timed by a task, not the gesture, so a release always comes after a completed hold.
@@ -206,6 +207,7 @@ The agreed design is the glass restyle: https://claude.ai/artifact/2QBd8XiVyBibp
 - **Foul**: Free / Penalty, a card chip (none, yellow, black, red) and who fouled; `side` is the team that conceded it. A card is always part of a foul, so there is no separate Card entry.
 - **Kickout**: the team taking it; recorded as won, the sheet switches to lost (a lost kickout has no player).
 - **Substitution**: one team sheet; pick the player coming off, then it moves on to the player coming on. Picking the same player for both moves them across.
+- **Stats**: from the toolbar. The two teams side by side (scoring, shooting, own kickouts, fouls, cards and subs), then each team's shooters (score, how they scored, shots taken). A segmented control picks the whole match or one played period. It updates live. Rare misses (saved, short, post) show only when there are some; the black card only in codes that have it.
 - **Events list**: from the toolbar (not by tapping the last-event card: on smaller phones it covers the second team's More button until scrolled, so a missed tap would open the list). Newest first, by period; tap an event for its sheet, swipe to delete (not a period end).
 - **Times**: every event's sheet has a collapsed "When" to change its period and time. Tapping the clock adjusts it; the period only changes through the clock button.
 - **Team sheet**: More › Team Sheet (the first row), or ••• › Team Sheets; available any time. A name per number, Next moves to the next number, "Add Player 31" up to 40, swipe to remove an unused added player. Before throw-in, "Import from Panel…"; any time, "Save as New Panel". Nothing saved until Done; swipe-down is blocked while there are changes.

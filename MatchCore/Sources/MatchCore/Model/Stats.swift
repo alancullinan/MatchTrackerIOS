@@ -70,6 +70,15 @@ public struct TeamStats: Hashable, Sendable {
     /// Cards shown, whether recorded with a foul or on their own.
     public var cards: [CardType: Int] = [:]
     public var substitutions = 0
+    /// The team's own kickouts, won and lost.
+    public var kickoutsWon = 0
+    public var kickoutsLost = 0
+
+    /// Own kickouts won as a fraction of all taken (0...1); `nil` with none.
+    public var kickoutRetention: Double? {
+        let taken = kickoutsWon + kickoutsLost
+        return taken == 0 ? nil : Double(kickoutsWon) / Double(taken)
+    }
 
     /// Statistics for `side` from `events` - a whole match, or a filtered part
     /// such as one period. Pass `team` to order players with the same score by
@@ -89,7 +98,9 @@ public struct TeamStats: Hashable, Sendable {
                 cards[card, default: 0] += 1
             case .substitution:
                 substitutions += 1
-            case .kickout, .note, .periodEnd:
+            case .kickout(_, _, let won):
+                if won { kickoutsWon += 1 } else { kickoutsLost += 1 }
+            case .note, .periodEnd:
                 break
             }
         }
@@ -115,5 +126,11 @@ extension Match {
     /// A team's statistics for the whole match.
     public func stats(_ side: TeamSide) -> TeamStats {
         TeamStats(of: side, in: events, team: self[side])
+    }
+
+    /// A team's statistics for one period, or the whole match with `nil`.
+    public func stats(_ side: TeamSide, period: MatchPeriod?) -> TeamStats {
+        guard let period else { return stats(side) }
+        return TeamStats(of: side, in: events.filter { $0.period == period }, team: self[side])
     }
 }
