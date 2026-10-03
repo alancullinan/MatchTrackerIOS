@@ -194,9 +194,13 @@ struct MatchScreen: View {
                     if canOpenDrawer { DrawerHandle().padding(.top, 6) }
                 }
                 .contentShape(.rect)
-                .onTapGesture { setShowsEvents(!showsEvents) }
+                // A tap edits the event, like Details; only a drag moves the drawer.
+                .onTapGesture { if let id = cardDetailsID { session.detailsEvent = id } }
                 .gesture(drawerDrag)
                 .accessibilityActions {
+                    if let id = cardDetailsID {
+                        Button("Edit") { session.detailsEvent = id }
+                    }
                     if canOpenDrawer {
                         Button(showsEvents ? "Hide Events" : "Show Events") { setShowsEvents(!showsEvents) }
                     }
@@ -236,6 +240,12 @@ struct MatchScreen: View {
         return match.events.last?.id
     }
 
+    /// The card's event, when it has a details sheet to open with a tap.
+    private var cardDetailsID: EventID? {
+        guard let id = cardEventID, let event = match.event(id), hasDetails(event) else { return nil }
+        return id
+    }
+
     /// Whether there's anything to list under the card. With only the card's
     /// event, there isn't, so the drawer stays closed.
     private var canOpenDrawer: Bool {
@@ -259,7 +269,7 @@ struct MatchScreen: View {
 
     /// Drags the drawer with the finger; on release it settles open or closed,
     /// whichever the flick lands nearer. Measured on the screen, not the card,
-    /// which moves under the finger. (A tap on the card also opens or closes it.)
+    /// which moves under the finger.
     private var drawerDrag: some Gesture {
         DragGesture(minimumDistance: 8, coordinateSpace: .global)
             .updating($dragHeight) { drag, height, _ in height = drag.translation.height }
