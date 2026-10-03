@@ -2,7 +2,7 @@ import MatchCore
 import SwiftUI
 
 /// Every event in the match, newest first, grouped by period, shown in the
-/// match screen's event drawer. Tap one to change its details or time; swipe to delete it.
+/// match screen's event drawer (which opens only when there's something to list). Tap one to change its details or time; swipe to delete it.
 struct EventListView: View {
     let session: MatchSession
     /// An event to leave out: the one the last-event card shows above the list.
@@ -16,11 +16,12 @@ struct EventListView: View {
         let list = EventList(match, excluding: excluding)
         List {
             ForEach(list.sections, id: \.period) { section in
-                Section(section.period.displayName) {
+                Section {
                     ForEach(section.events, id: \.id) { event in
                         Button { onSelect(event.id) } label: { row(event) }
                             .tint(.primary)
                             .listRowBackground(Color.clear)
+                            .listRowInsets(Self.rowInsets)
                             .swipeActions {
                                 // A period end is part of the match's progress, so it can't be deleted here.
                                 if event.kind != .periodEnd {
@@ -30,39 +31,39 @@ struct EventListView: View {
                                 }
                             }
                     }
+                } header: {
+                    Text(section.period.displayName)
+                        .listRowInsets(Self.rowInsets)
                 }
             }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .overlay {
-            if list.sections.isEmpty {
-                ContentUnavailableView("No Events Yet", systemImage: "list.bullet",
-                                       description: Text("Scores, fouls and everything else appear here as they're recorded."))
-            }
-        }
     }
 
+    /// In line with the last-event card above the list.
+    private static let rowInsets = EdgeInsets(top: 10, leading: 22, bottom: 10, trailing: 12)
+
+    /// Styled like the last-event card, so the drawer reads as one list.
     private func row(_ event: MatchEvent) -> some View {
         HStack(spacing: 12) {
             EventIcon(event)
             VStack(alignment: .leading, spacing: 2) {
                 Text(EventText.title(event, in: match))
-                    .font(.callout.weight(.semibold))
+                    .font(.system(size: 17, weight: .bold))
                 Text(EventText.detail(event, in: match, showsPeriod: false))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.7))
                     .monospacedDigit()
                 // A note's text is its title; any other event's note goes underneath.
                 if let note = event.note, event.type != .note {
                     Text(note)
-                        .font(.footnote)
+                        .font(.system(size: 13))
                         .italic()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.7))
                 }
             }
         }
-        .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
     }
 }
@@ -70,12 +71,6 @@ struct EventListView: View {
 #if DEBUG
 #Preview("Events") {
     EventListView(session: .preview(.fullTimeAfterExtraTime), onSelect: { _ in })
-        .background { GrassBackground() }
-        .matchScreenAppearance()
-}
-
-#Preview("No events") {
-    EventListView(session: .preview(.notStarted), onSelect: { _ in })
         .background { GrassBackground() }
         .matchScreenAppearance()
 }

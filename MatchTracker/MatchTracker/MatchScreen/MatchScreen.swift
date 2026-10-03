@@ -190,14 +190,20 @@ struct MatchScreen: View {
         let undoing = session.undoable != nil
         VStack(spacing: 0) {
             lastEventCard
-                .overlay(alignment: .top) { DrawerHandle().padding(.top, 6) }
+                .overlay(alignment: .top) {
+                    if canOpenDrawer { DrawerHandle().padding(.top, 6) }
+                }
                 .contentShape(.rect)
                 .onTapGesture { setShowsEvents(!showsEvents) }
                 .gesture(drawerDrag)
-                .accessibilityAction(named: showsEvents ? "Hide Events" : "Show Events") { setShowsEvents(!showsEvents) }
+                .accessibilityActions {
+                    if canOpenDrawer {
+                        Button(showsEvents ? "Hide Events" : "Show Events") { setShowsEvents(!showsEvents) }
+                    }
+                }
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardHeight = $0 }
             // Once the card is measured, so the drawer never opens with the list showing.
-            if !match.events.isEmpty, cardHeight > 0 {
+            if canOpenDrawer, cardHeight > 0 {
                 Divider().padding(.horizontal, 20)
                 // Always its open size, so dragging only uncovers more of it rather
                 // than laying the list out again each frame.
@@ -220,14 +226,20 @@ struct MatchScreen: View {
         .padding(.top, clockBottom + 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { drawerSpace = $0 - clockBottom - 8 }
-        // Nothing to list until something happens.
-        .onChange(of: match.events.isEmpty) { _, isEmpty in if isEmpty { setShowsEvents(false) } }
+        // Closes when the last listed event is deleted or undone.
+        .onChange(of: canOpenDrawer) { _, canOpen in if !canOpen { setShowsEvents(false) } }
     }
 
     /// The event the card shows, left out of the list below it.
     private var cardEventID: EventID? {
         if case .periodStart = session.undoable { return nil }
         return match.events.last?.id
+    }
+
+    /// Whether there's anything to list under the card. With only the card's
+    /// event, there isn't, so the drawer stays closed.
+    private var canOpenDrawer: Bool {
+        !EventList(match, excluding: cardEventID).sections.isEmpty
     }
 
     /// Whether there's a last event (or a period start to undo) to show.
@@ -239,7 +251,7 @@ struct MatchScreen: View {
     /// The drawer's height: the card's when closed, up to the clock when open,
     /// following the finger while dragged.
     private var drawerHeight: CGFloat {
-        guard !match.events.isEmpty else { return cardHeight }
+        guard canOpenDrawer else { return cardHeight }
         let open = max(drawerSpace, cardHeight)
         let base = showsEvents ? open : cardHeight
         return min(max(base - dragHeight, cardHeight), open)
@@ -260,7 +272,7 @@ struct MatchScreen: View {
     }
 
     private func setShowsEvents(_ shows: Bool) {
-        guard shows != showsEvents, !shows || !match.events.isEmpty else { return }
+        guard shows != showsEvents, !shows || canOpenDrawer else { return }
         withAnimation(Self.drawerAnimation) { showsEvents = shows }
     }
 
