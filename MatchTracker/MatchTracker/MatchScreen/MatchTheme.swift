@@ -1,67 +1,62 @@
 import MatchCore
 import SwiftUI
-import UIKit
 
-/// The match screen's colours, from the agreed design: a calm pitch green with
-/// gold for the period and the main button. Each has a light and a dark shade,
-/// both chosen to read in sunlight.
+/// The match screen's colours, from the agreed glass design. The screen and
+/// the sheets it opens are always dark, so each colour has one shade.
 enum MatchTheme {
-    static let pitch = Color(light: 0xE6EFE5, dark: 0x0D2418)
-    static let stripe = Color(light: 0x1E5028, dark: 0xFFFFFF).opacity(0.035)
-    static let gold = Color(light: 0xA86F00, dark: 0xF2B631)
-    static let goldInk = Color(light: 0xFFF8E6, dark: 0x241A00)
-    static let goal = Color(light: 0x23913A, dark: 0x3FB24F)
+    static let gold = Color(hex: 0xFFD60A)
+    static let goldInk = Color(hex: 0x1A1A00)
+    static let goal = Color(hex: 0x30D158)
     static let point = Color.white
-    static let twoPointer = Color(light: 0xC9640A, dark: 0xF08A24)
-    static let flagDisc = Color(light: 0x10241A, dark: 0x10241A)
-    static let muted = Color(light: 0x4C6354, dark: 0xA9BCAE)
-    static let live = Color(light: 0xC62A1D, dark: 0xFF6B5E)
+    static let twoPointer = Color(hex: 0xF08A24)
+    static let flagDisc = Color(hex: 0x10241A)
+    static let muted = Color.white.opacity(0.75)
+    /// The background when Reduce Transparency is on, and behind the photo while it loads.
+    static let pitch = Color(hex: 0x10301C)
 
     /// A referee's card.
     static func card(_ card: CardType) -> Color {
         switch card {
-        case .yellow: Color(light: 0xF2C200, dark: 0xF5CB1A)
-        case .black: Color(light: 0x161616, dark: 0x161616)
-        case .red: Color(light: 0xD32418, dark: 0xE8382B)
+        case .yellow: Color(hex: 0xF5CB1A)
+        case .black: Color(hex: 0x161616)
+        case .red: Color(hex: 0xE8382B)
         }
     }
 
-    /// Condensed scoreboard lettering for the clock, scores and labels.
+    /// The lettering for the clock, scores and labels: standard SF Pro.
+    /// Changing numbers also take `.monospacedDigit()`.
     static func display(_ size: CGFloat, _ weight: Font.Weight = .semibold) -> Font {
-        .system(size: size, weight: weight).width(.condensed)
+        .system(size: size, weight: weight)
     }
 }
 
 extension Color {
-    /// A colour with its own shade for light and dark mode, from hex RGB.
-    init(light: UInt32, dark: UInt32) {
-        self.init(uiColor: UIColor { traits in
-            let hex = traits.userInterfaceStyle == .dark ? dark : light
-            return UIColor(
-                red: CGFloat((hex >> 16) & 0xFF) / 255,
-                green: CGFloat((hex >> 8) & 0xFF) / 255,
-                blue: CGFloat(hex & 0xFF) / 255,
-                alpha: 1
-            )
-        })
+    /// A colour from hex RGB.
+    init(hex: UInt32) {
+        self.init(red: Double((hex >> 16) & 0xFF) / 255,
+                  green: Double((hex >> 8) & 0xFF) / 255,
+                  blue: Double(hex & 0xFF) / 255)
     }
 }
 
-/// The calm pitch background: plain green with faint mowing stripes.
-struct PitchBackground: View {
+/// The match screen's background: a photo of grass under a faint dark green
+/// shade, or plain pitch green with Reduce Transparency.
+struct GrassBackground: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     var body: some View {
         MatchTheme.pitch
             .overlay {
-                Canvas { context, size in
-                    let stripe: CGFloat = 64
-                    var y: CGFloat = 0
-                    while y < size.height {
-                        context.fill(Path(CGRect(x: 0, y: y, width: size.width, height: stripe)), with: .color(MatchTheme.stripe))
-                        y += stripe * 2
-                    }
+                if !reduceTransparency {
+                    Image("GrassBackground")
+                        .resizable()
+                        .scaledToFill()
+                        .overlay(Color(red: 4 / 255, green: 24 / 255, blue: 10 / 255).opacity(0.30))
                 }
             }
+            .clipped()
             .ignoresSafeArea()
+            .accessibilityHidden(true)
     }
 }
 
@@ -109,5 +104,44 @@ struct FlagIcon: View {
             }
         }
         .accessibilityHidden(true)
+    }
+}
+
+extension View {
+    /// A Liquid Glass panel, or a solid one with Reduce Transparency.
+    func matchGlass(in shape: some Shape, interactive: Bool = false) -> some View {
+        modifier(MatchGlass(shape: shape, interactive: interactive))
+    }
+}
+
+private struct MatchGlass<S: Shape>: ViewModifier {
+    let shape: S
+    let interactive: Bool
+
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+                .background(Color(hex: 0x1E4A2E), in: shape)
+                .overlay(shape.stroke(.white.opacity(0.22), lineWidth: 1))
+        } else {
+            content.glassEffect(interactive ? .regular.interactive() : .regular, in: shape)
+        }
+    }
+}
+
+extension View {
+    /// Dark for a screen pushed onto a stack whose other screens follow the
+    /// system setting. (`preferredColorScheme` would turn the whole window dark,
+    /// so the match list would flash dark during the push.)
+    func matchScreenAppearance() -> some View {
+        environment(\.colorScheme, .dark)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+    }
+
+    /// Dark for a sheet the match screen opens; it applies to the sheet only.
+    func matchSheetAppearance() -> some View {
+        preferredColorScheme(.dark)
     }
 }

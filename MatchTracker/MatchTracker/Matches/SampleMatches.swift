@@ -66,7 +66,11 @@ enum SampleMatches {
     }
 
     /// States the match screen can be in, for its Previews.
-    enum ScreenState { case notStarted, secondHalf, halfTime, fullTimeAfterExtraTime }
+    enum ScreenState {
+        case notStarted, firstHalf, paused, secondHalf, halfTime, fullTime, fullTimeAfterExtraTime
+        /// A hurling match with scores too long for the usual size: 12-21 and 3-25.
+        case longScores
+    }
 
     /// A match for the match screen in `state`, as of `now`.
     static func screen(_ state: ScreenState, now: Date = .now) -> Match {
@@ -79,6 +83,12 @@ enum SampleMatches {
         case .notStarted:
             match.team1.colors = nil
             match.team2.colors = nil
+        case .firstHalf, .paused:
+            // 5-17 to 1-02, 18:42 in.
+            match.start(at: now.addingTimeInterval(-1122))
+            score(&match, .team1, goals: 5, points: 17, at: now.addingTimeInterval(-1100))
+            score(&match, .team2, goals: 1, points: 2, at: now.addingTimeInterval(-400))
+            if state == .paused { match.pause(at: now) }
         case .secondHalf:
             match.start(at: now.addingTimeInterval(-3600))
             match.record(shot(.team1, .goal), at: now.addingTimeInterval(-3400))
@@ -91,6 +101,18 @@ enum SampleMatches {
             match.start(at: now.addingTimeInterval(-2400))
             match.record(shot(.team2, .goal), at: now.addingTimeInterval(-2000))
             match.endPeriod(at: now.addingTimeInterval(-500))
+        case .fullTime:
+            play(&match, from: now.addingTimeInterval(-4500), team1: [.goal, .point], team2: [.point, .point, .point])
+        case .longScores:
+            match = Match.new(matchType: .hurling, team1Name: "Kilkenny", team2Name: "Tipperary",
+                              competition: "All-Ireland Senior Hurling Final", date: now)
+            match.team1.colors = TeamColors(.black, .gold)
+            match.team2.colors = TeamColors(.blue, .gold)
+            match.start(at: now.addingTimeInterval(-3600))
+            score(&match, .team1, goals: 12, points: 21, at: now.addingTimeInterval(-3500))
+            score(&match, .team2, goals: 3, points: 25, at: now.addingTimeInterval(-3000))
+            match.endPeriod(at: now.addingTimeInterval(-1700))
+            match.start(at: now.addingTimeInterval(-1000))
         case .fullTimeAfterExtraTime:
             play(&match, from: now.addingTimeInterval(-9000), team1: [.goal, .point, .point], team2: [.goal, .twoPointer], extraTime: true)
         }
@@ -99,6 +121,14 @@ enum SampleMatches {
 
     private static func shot(_ side: TeamSide, _ outcome: ShotOutcome) -> MatchEvent.Kind {
         .shot(side: side, player: nil, outcome: outcome, type: .fromPlay)
+    }
+
+    /// Records `goals` and `points` for `side`, one a second from `start`.
+    private static func score(_ match: inout Match, _ side: TeamSide, goals: Int, points: Int, at start: Date) {
+        let outcomes = Array(repeating: ShotOutcome.goal, count: goals) + Array(repeating: .point, count: points)
+        for (index, outcome) in outcomes.enumerated() {
+            match.record(shot(side, outcome), at: start.addingTimeInterval(TimeInterval(index)))
+        }
     }
 
     /// Plays a whole match from `start`, scoring in the first half.
