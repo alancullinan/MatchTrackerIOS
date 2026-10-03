@@ -158,10 +158,11 @@ private struct MatchGlass<S: Shape>: ViewModifier {
 extension View {
     /// Dark for a screen pushed onto a stack whose other screens follow the
     /// system setting. (`preferredColorScheme` would turn the whole window dark,
-    /// so the match list would flash dark during the push.)
+    /// so the match list would flash dark during the push.) Also hides the tab bar.
     func matchScreenAppearance() -> some View {
         environment(\.colorScheme, .dark)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar(.hidden, for: .tabBar)
     }
 
     /// Dark for a sheet the match screen opens; it applies to the sheet only.

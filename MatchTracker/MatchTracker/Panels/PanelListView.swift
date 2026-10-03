@@ -3,7 +3,7 @@ import SwiftData
 import SwiftUI
 
 /// Every player panel: a squad's names by number, ready to import into a team
-/// before throw-in. Reached from the match list's toolbar.
+/// before throw-in. The Panels tab.
 struct PanelListView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: PanelList.sortOrder) private var storedPanels: [StoredPanel]
