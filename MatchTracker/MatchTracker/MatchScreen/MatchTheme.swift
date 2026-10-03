@@ -9,7 +9,6 @@ enum MatchTheme {
     static let goal = Color(hex: 0x30D158)
     static let point = Color.white
     static let twoPointer = Color(hex: 0xF08A24)
-    static let flagDisc = Color(hex: 0x10241A)
     static let muted = Color.white.opacity(0.75)
     /// The background when Reduce Transparency is on, and behind the photo while it loads.
     static let pitch = Color(hex: 0x10301C)
@@ -60,7 +59,32 @@ struct GrassBackground: View {
     }
 }
 
-/// An umpire's flag: a pole with a swallow-tailed pennant, drawn in a 32-point square.
+/// The flag on the match screen's goal and point buttons: a waving flag on a
+/// pole with a knob, drawn in a 24-point square (from the design's SVG).
+struct WavingFlag: Shape {
+    func path(in rect: CGRect) -> Path {
+        let scale = min(rect.width, rect.height) / 24
+        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+            CGPoint(x: rect.minX + x * scale, y: rect.minY + y * scale)
+        }
+        var path = Path()
+        path.addRoundedRect(in: CGRect(origin: point(4.4, 3.5), size: CGSize(width: 2.2 * scale, height: 18.6 * scale)),
+                            cornerSize: CGSize(width: 1.1 * scale, height: 1.1 * scale))
+        path.addEllipse(in: CGRect(origin: point(4.2, 1.7), size: CGSize(width: 2.6 * scale, height: 2.6 * scale)))
+        path.move(to: point(6.5, 4.8))
+        path.addCurve(to: point(12.9, 5.1), control1: point(8.8, 3.4), control2: point(10.9, 4.2))
+        path.addCurve(to: point(19, 5), control1: point(14.9, 6), control2: point(16.8, 6.3))
+        path.addCurve(to: point(19.7, 5.4), control1: point(19.3, 4.8), control2: point(19.7, 5))
+        path.addLine(to: point(19.7, 13.5))
+        path.addCurve(to: point(19.3, 14.2), control1: point(19.7, 13.8), control2: point(19.6, 14))
+        path.addCurve(to: point(13, 14.3), control1: point(17.1, 15.5), control2: point(15.1, 15.2))
+        path.addCurve(to: point(6.5, 14), control1: point(10.9, 13.4), control2: point(8.8, 12.6))
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// An umpire's flag for event icons: a pole with a swallow-tailed pennant, drawn in a 32-point square.
 struct FlagShape: Shape {
     enum Part { case pole, pennant }
     let part: Part

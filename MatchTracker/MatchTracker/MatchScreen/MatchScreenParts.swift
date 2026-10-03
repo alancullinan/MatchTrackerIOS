@@ -94,7 +94,9 @@ struct ClockButtonFace: View {
     }
 }
 
-/// One team: name and colours on top, then goal flag · score · point flag.
+/// One team on plain glass: colour badge · name · total points on top, the
+/// score in the middle, More below, and the goal and point flags either side,
+/// centred on the whole card.
 struct TeamCard: View {
     let team: Team
     let score: Score
@@ -102,59 +104,83 @@ struct TeamCard: View {
     let onScore: (ShotOutcome) -> Void
     let onMore: () -> Void
 
+    /// Room kept clear for the flags: a 62-point flag, 16 points in from the
+    /// card's edge, less the card's padding, plus a gap.
+    private static let flagClearance: CGFloat = 70
+
     var body: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 10) {
-                if let colors = team.colors {
-                    TeamColorBadge(colors: colors, size: 26)
-                }
-                Text(EventText.teamName(team).uppercased())
-                    .font(MatchTheme.display(24, .bold))
-                    .tracking(1)
+        VStack(spacing: 6) {
+            ZStack {
+                Text(EventText.teamName(team))
+                    .font(.system(size: 20, weight: .bold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
+                    .padding(.horizontal, 84)
+                HStack {
+                    if let colors = team.colors {
+                        TeamColorBadge(colors: colors, size: 24)
+                    }
+                    Spacer(minLength: 0)
+                    totalPill
+                }
             }
+            .padding(.top, 2)
 
-            HStack(alignment: .center) {
-                FlagButton(outcome: .goal, teamName: team.name, enabled: flagsEnabled) { onScore(.goal) }
-                Spacer(minLength: 8)
-                scoreText
-                Spacer(minLength: 8)
-                FlagButton(outcome: .point, teamName: team.name, enabled: flagsEnabled) { onScore(.point) }
+            scoreText
+                .padding(.horizontal, Self.flagClearance)
+
+            Button(action: onMore) {
+                Label("More", systemImage: "plus")
+                    .font(.system(size: 15, weight: .semibold))
+                    .padding(.horizontal, 4)
+                    .frame(minHeight: 36)
             }
-
-            Button("More", systemImage: "plus", action: onMore)
-                .font(.callout.weight(.semibold))
-                .buttonStyle(.glass)
-                .controlSize(.large)
-                .accessibilityLabel("More for \(team.name)")
+            .buttonStyle(.glass)
+            .padding(.top, 4)
+            .accessibilityLabel("More for \(EventText.teamName(team))")
         }
-        .padding(16)
+        .padding(14)
+        .padding(.bottom, 2)
         .frame(maxWidth: .infinity)
-        .glassEffect(.regular.tint(team.colors.map { $0.primary.color.opacity(0.28) }), in: .rect(cornerRadius: 26))
+        .overlay(alignment: .leading) {
+            FlagButton(outcome: .goal, teamName: EventText.teamName(team), enabled: flagsEnabled) { onScore(.goal) }
+                .padding(.leading, 16)
+        }
+        .overlay(alignment: .trailing) {
+            FlagButton(outcome: .point, teamName: EventText.teamName(team), enabled: flagsEnabled) { onScore(.point) }
+                .padding(.trailing, 16)
+        }
+        .matchGlass(in: .rect(cornerRadius: 32))
     }
 
+    private var totalPill: some View {
+        Text(score.total == 1 ? "1 pt" : "\(score.total) pts")
+            .font(.system(size: 17, weight: .bold))
+            .monospacedDigit()
+            .foregroundStyle(.white.opacity(0.9))
+            .padding(.vertical, 4)
+            .padding(.horizontal, 12)
+            .background(.black.opacity(0.28), in: .capsule)
+            .fixedSize()
+            .accessibilityLabel("\(score.total) in total")
+    }
+
+    /// "1-05", with a short gold hyphen.
     private var scoreText: some View {
-        VStack(spacing: 4) {
-            (Text("\(score.goals)")
-                + Text("-").foregroundStyle(MatchTheme.gold)
-                + Text(score.points < 10 ? "0\(score.points)" : "\(score.points)"))
-                .font(MatchTheme.display(64))
-                .monospacedDigit()
-                .contentTransition(.numericText())
-            Text("(\(score.total))")
-                .font(MatchTheme.display(22))
-                .monospacedDigit()
-                .foregroundStyle(MatchTheme.muted)
-        }
-        .lineLimit(1)
-        .minimumScaleFactor(0.6)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(score.goals) goals, \(score.points) points, \(score.total) in total")
+        let points = score.points < 10 ? "0\(score.points)" : "\(score.points)"
+        // Thin spaces give the hyphen a little room against the tight tracking.
+        return Text("\(score.goals)\(Text("\u{2009}-\u{2009}").foregroundStyle(MatchTheme.gold))\(points)")
+            .font(.system(size: 64, weight: .bold))
+            .monospacedDigit()
+            .tracking(-1.9)
+            .contentTransition(.numericText())
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .accessibilityLabel("\(score.goals) goals, \(score.points) points")
     }
 }
 
-/// A round umpire's-flag button: green for a goal, white for a point.
+/// A round flag button: green for a goal, white for a point.
 struct FlagButton: View {
     let outcome: ShotOutcome
     let teamName: String
@@ -163,18 +189,13 @@ struct FlagButton: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                FlagIcon(fill: fill)
-                    .frame(width: 34, height: 34)
-                    .frame(width: 64, height: 64)
-                    .background(MatchTheme.flagDisc, in: .circle)
-                    .overlay(Circle().strokeBorder(fill, lineWidth: 3))
-                    .shadow(color: .black.opacity(0.3), radius: 8, y: 6)
-                Text(outcome.displayName.uppercased())
-                    .font(MatchTheme.display(14))
-                    .tracking(1)
-                    .foregroundStyle(MatchTheme.muted)
-            }
+            WavingFlag()
+                .fill(color)
+                .frame(width: 36, height: 36)
+                .frame(width: 62, height: 62)
+                .background(color.opacity(outcome == .goal ? 0.22 : 0.18), in: .circle)
+                .overlay(Circle().strokeBorder(color.opacity(outcome == .goal ? 0.6 : 0.55), lineWidth: 1))
+                .contentShape(.circle)
         }
         .buttonStyle(FlagPressStyle())
         .disabled(!enabled)
@@ -182,7 +203,7 @@ struct FlagButton: View {
         .accessibilityLabel("\(outcome.displayName) for \(teamName)")
     }
 
-    private var fill: Color { outcome == .goal ? MatchTheme.goal : MatchTheme.point }
+    private var color: Color { outcome == .goal ? MatchTheme.goal : MatchTheme.point }
 }
 
 private struct FlagPressStyle: ButtonStyle {
@@ -243,11 +264,12 @@ struct LastEventCard: View {
             icon
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.callout.weight(.semibold))
+                    .font(.system(size: 17, weight: .bold))
                     .lineLimit(2)
+                    .minimumScaleFactor(0.8)
                 Text(detail)
-                    .font(.footnote)
-                    .foregroundStyle(MatchTheme.muted)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.7))
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
@@ -269,13 +291,14 @@ struct LastEventCard: View {
                 .transition(.opacity.combined(with: .scale))
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .frame(minHeight: 64)
-        .glassEffect(.regular, in: .rect(cornerRadius: 22))
+        .padding(.leading, showsUndo ? 16 : 22)
+        .padding(.trailing, 12)
+        .padding(.vertical, 14)
+        .frame(minHeight: 76)
+        .matchGlass(in: .rect(cornerRadius: 38))
         .overlay {
             if showsUndo {
-                RoundedRectangle(cornerRadius: 22).strokeBorder(MatchTheme.gold, lineWidth: 2)
+                RoundedRectangle(cornerRadius: 38).strokeBorder(MatchTheme.gold, lineWidth: 2)
             }
         }
         .animation(.default, value: showsUndo)
