@@ -41,6 +41,13 @@ struct MatchListView: View {
             .listStyle(.plain)
             .navigationTitle("Matches")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        PanelListView()
+                    } label: {
+                        Label("Panels", systemImage: "person.3")
+                    }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button("New Match", systemImage: "plus") { isAddingMatch = true }
                 }

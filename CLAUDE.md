@@ -44,6 +44,8 @@ MatchTracker/                   Xcode project folder
     Storage/                    SwiftData records (StoredMatch, StoredPanel) and the store
     Matches/                    the match list (the home screen), its rows, and sample matches for Previews
     MatchScreen/                the match screen: `MatchSession` (applies, saves and undoes changes), theme, parts, `ScorerSheet`, `EventSheets` (foul, kickout, substitution and note sheets, and their shared parts, including the "When" time field), `EventListView` (+ `EventList`, its sections), `ClockEditor`, `EventText`
+    Panels/                     player panels: `PanelList` (sort, save, delete), the list and the editor
+    Players/                    `TeamSheetEditor` (a match's team sheet)
     Teams/                      team colour badge and picker (`KitColor.color` lives here, not in MatchCore)
   MatchTrackerTests/            app tests (Swift Testing), run by CI
 MatchCore/                      local Swift package - the domain layer (linked as ../MatchCore)
@@ -79,7 +81,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | `Score.swift` | `Score` (goals, points, two-pointers, total, "1-05"), `match.score(_:)`, `MatchType.allowsTwoPointers` |
 | `Stats.swift` | `match.stats(_:)` → `TeamStats`: shooting, per-player stats with score by shot type, fouls, cards, substitutions |
 | `Roster.swift` | `match.updateRoster(_:players:)` (the team sheet editor's rules), `isReferenced(_:)`, `team.nextExtraPlayer()` |
-| `PlayerPanel.swift` | 30-slot panels (`PlayerPanel.empty`) |
+| `PlayerPanel.swift` | Panels of 30 slots, up to 40 (`PlayerPanel.empty`, `startingSize`, `maxSize`), `panel.update(name:slots:)` (the panel editor's rules), `nextExtraSlot()`, `namedCount` |
 | `Identifiers.swift`, `Enums.swift` | Typed UUID ids; the enums |
 
 ### MatchCore rules
@@ -149,7 +151,8 @@ Rules of the sport and lessons from real bugs - keep them whatever the UI looks 
 
 **Players and panels**
 - Each team starts with 30 players, jersey numbers 1-30; players 31-40 can be added on demand (owner's choice: up to 40, added only when needed, so the scorer's team sheet stays short). Numbers always run 1 to n without gaps. The first 30 are never removed; an added player can be removed only if no event names them. Names are optional and can be edited any time.
-- A panel has **30 fixed slots** (to grow to 40 like rosters when the panel editor is built); the slot is the jersey number. Empty slots are kept; panels are never sorted or compacted.
+- A panel has **30 slots, up to 40** like a team (31-40 added on demand, and only the last added one removed); the slot is the jersey number. Empty slots are kept; panels are never sorted or compacted. A panel needs a name.
+- Panels live in `Panels/`: the list (sorted by name, Finder-style) is reached from the match list's toolbar; tap one to edit it, swipe to delete (with a confirmation). Nothing in the editor is saved until Done. Deleting a panel never touches matches: their names were copied in.
 - Panel import into a team is allowed only before throw-in, overwrites names in place and **never regenerates player ids** (events reference them).
 
 **Data safety**
