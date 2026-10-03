@@ -53,6 +53,11 @@ struct MatchScreen: View {
     @State private var clockBottom: CGFloat = 0
     /// The last-event card's height, kept clear below the team cards.
     @State private var cardHeight: CGFloat = 0
+    /// The room between the clock and the bottom: how tall the drawer opens.
+    @State private var drawerSpace: CGFloat = 0
+    /// How far the drawer has been dragged (down is positive); springs back on release.
+    @GestureState(resetTransaction: Transaction(animation: MatchScreen.drawerAnimation))
+    private var dragHeight: CGFloat = 0
     @State private var showsStats = false
     @State private var editsClock = false
     @State private var teamSheetFor: TeamSide?
@@ -177,55 +182,77 @@ struct MatchScreen: View {
 
     private static let screenSpace = "matchScreen"
 
-    /// The bottom of the screen, under the thumb: the last event, which drags up
-    /// into the event drawer (open, it reaches the clock and the card stays under it).
+    /// The bottom of the screen, under the thumb: the event drawer. Closed, it's
+    /// the last-event card; dragged up, the card rides up with it and every event
+    /// shows below, up to the clock.
+    @ViewBuilder
     private var thumbZone: some View {
-        VStack(spacing: 8) {
-            if showsEvents {
-                eventDrawer
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+        let undoing = session.undoable != nil
+        VStack(spacing: 0) {
             lastEventCard
                 .overlay(alignment: .top) { DrawerHandle().padding(.top, 6) }
+                .contentShape(.rect)
                 .gesture(drawerDrag)
                 .accessibilityAction(named: showsEvents ? "Hide Events" : "Show Events") { setShowsEvents(!showsEvents) }
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardHeight = $0 }
+            if drawerHeight > cardHeight + 1 {
+                Divider().padding(.horizontal, 20)
+                EventListView(session: session) { session.detailsEvent = $0 }
+            }
         }
+        .frame(height: cardHeight > 0 ? drawerHeight : nil, alignment: .top)
+        .clipShape(.rect(cornerRadius: 38))
+        .matchGlass(in: .rect(cornerRadius: 38))
+        .overlay {
+            if undoing {
+                RoundedRectangle(cornerRadius: 38).strokeBorder(MatchTheme.gold, lineWidth: 2)
+            }
+        }
+        .animation(.default, value: undoing)
+        .opacity(hasLastEvent ? 1 : 0)
         .padding(.horizontal, 8)
         .padding(.top, clockBottom + 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { drawerSpace = $0 - clockBottom - 8 }
         // Nothing to list until something happens.
         .onChange(of: match.events.isEmpty) { _, isEmpty in if isEmpty { setShowsEvents(false) } }
     }
 
-    private var eventDrawer: some View {
-        VStack(spacing: 0) {
-            Button { setShowsEvents(false) } label: {
-                DrawerHandle()
-                    .frame(maxWidth: .infinity, minHeight: 28)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Hide Events")
-            .gesture(drawerDrag)
-            EventListView(session: session) { session.detailsEvent = $0 }
-        }
-        .matchGlass(in: .rect(cornerRadius: 28))
+    /// Whether there's a last event (or a period start to undo) to show.
+    private var hasLastEvent: Bool {
+        if case .periodStart = session.undoable { return true }
+        return !match.events.isEmpty
     }
 
-    /// Up opens the drawer, down closes it. A drag, never a tap, so a missed tap
-    /// on the card (which can cover the second team's More button) opens nothing.
+    /// The drawer's height: the card's when closed, up to the clock when open,
+    /// following the finger while dragged.
+    private var drawerHeight: CGFloat {
+        guard !match.events.isEmpty else { return cardHeight }
+        let open = max(drawerSpace, cardHeight)
+        let base = showsEvents ? open : cardHeight
+        return min(max(base - dragHeight, cardHeight), open)
+    }
+
+    /// Drags the drawer with the finger; on release it settles open or closed,
+    /// whichever the flick lands nearer. A drag, never a tap, so a missed tap on the
+    /// card (which can cover the second team's More button) opens nothing.
     private var drawerDrag: some Gesture {
-        DragGesture(minimumDistance: 12).onEnded { drag in
-            let distance = drag.predictedEndTranslation.height
-            if distance < -40 { setShowsEvents(true) } else if distance > 40 { setShowsEvents(false) }
-        }
+        DragGesture(minimumDistance: 8)
+            .updating($dragHeight) { drag, height, _ in height = drag.translation.height }
+            .onEnded { drag in
+                let open = max(drawerSpace, cardHeight)
+                let base = showsEvents ? open : cardHeight
+                let landing = base - drag.predictedEndTranslation.height
+                setShowsEvents(landing > (open + cardHeight) / 2)
+            }
     }
 
     private func setShowsEvents(_ shows: Bool) {
         guard shows != showsEvents, !shows || !match.events.isEmpty else { return }
-        withAnimation(.spring(duration: 0.35)) { showsEvents = shows }
+        withAnimation(Self.drawerAnimation) { showsEvents = shows }
     }
+
+    private static let drawerAnimation = Animation.spring(duration: 0.35)
 
     @ViewBuilder
     private var lastEventCard: some View {

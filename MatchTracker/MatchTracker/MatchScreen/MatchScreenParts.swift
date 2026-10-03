@@ -252,6 +252,7 @@ struct DrawerHandle: View {
 }
 
 /// The latest thing that happened, with Undo for a few seconds after each entry.
+/// The top of the match screen's event drawer, which draws its glass.
 struct LastEventCard: View {
     let title: String
     let detail: String
@@ -297,12 +298,6 @@ struct LastEventCard: View {
         .padding(.trailing, 12)
         .padding(.vertical, 14)
         .frame(minHeight: 76)
-        .matchGlass(in: .rect(cornerRadius: 38))
-        .overlay {
-            if showsUndo {
-                RoundedRectangle(cornerRadius: 38).strokeBorder(MatchTheme.gold, lineWidth: 2)
-            }
-        }
         .animation(.default, value: showsUndo)
     }
 }
