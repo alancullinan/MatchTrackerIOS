@@ -17,8 +17,8 @@ private let point = MatchEvent.Kind.shot(side: .team1, player: nil, outcome: .po
     let match = try #require(Match.new(details()))
     #expect(match.details == details())
     #expect(match.clock.period == .notStarted)
-    #expect(match.team1.players.count == Team.rosterSize)
-    #expect(match.team2.players.count == Team.rosterSize)
+    #expect(match.team1.players.count == Team.startingRosterSize)
+    #expect(match.team2.players.count == Team.startingRosterSize)
 }
 
 @Test func bothTeamsMustBeNamed() {

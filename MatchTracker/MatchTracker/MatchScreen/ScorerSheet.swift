@@ -84,7 +84,7 @@ struct ScorerSheet: View {
 }
 
 /// A team sheet laid out like the pitch, forwards at the top down to the
-/// goalkeeper, with subs 16-30 below. Tapping a player highlights them; tapping
+/// goalkeeper, with the subs (16 up to 30, or 40 with added players) below. Tapping a player highlights them; tapping
 /// them again clears it. A `marked` player (e.g. the one coming off, while the
 /// one coming on is picked) is outlined.
 struct TeamSheetPicker: View {
@@ -94,7 +94,6 @@ struct TeamSheetPicker: View {
 
     /// Jersey numbers by line, from full forwards to goalkeeper.
     static let lines: [[Int]] = [[13, 14, 15], [10, 11, 12], [8, 9], [5, 6, 7], [2, 3, 4], [1]]
-    static let subs = Array(16...Team.rosterSize)
 
     var body: some View {
         VStack(spacing: 12) {
@@ -118,7 +117,7 @@ struct TeamSheetPicker: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
-                ForEach(Self.subs, id: \.self) { number in
+                ForEach(team.players.map(\.jerseyNumber).filter { $0 > 15 }, id: \.self) { number in
                     playerButton(number, minHeight: 48)
                 }
             }
