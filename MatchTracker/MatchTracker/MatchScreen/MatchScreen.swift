@@ -148,6 +148,8 @@ struct MatchScreen: View {
                 .matchSheetAppearance()
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: session.changeCount)
+        // The Lock Screen and Dynamic Island follow every change, including from the event list.
+        .onChange(of: session.match, initial: true) { _, match in LiveActivities.update(for: match) }
         .task(id: session.undoable) {
             guard session.undoable != nil else { return }
             try? await Task.sleep(for: Self.undoSeconds)

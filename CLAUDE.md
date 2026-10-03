@@ -28,6 +28,8 @@ Other MatchTracker repos exist (`MatchTracker`, the original 2025 Swift app, and
   `xcodebuild test -project MatchTracker/MatchTracker.xcodeproj -scheme MatchTracker -destination 'platform=iOS Simulator,name=<that iPhone>'`
 - Loop until it builds and the tests pass, then check UI changes in Previews or the Simulator before opening a PR.
 - To try the app in the Simulator without touching saved matches, launch it with the `-sampleStore` argument (debug builds only): it opens an in-memory store with the sample matches. Xcode's device-interaction tool can only tap (`t x y`) and wait (`w <seconds>`) here, not swipe or scroll; type by tapping the on-screen keyboard.
+- If `xcodebuild test` fails with "The test runner hung before establishing connection" or "failed to launch", the simulator is the problem, not the tests: boot it (`xcrun simctl boot <id>`, `xcrun simctl bootstatus <id> -b`), launch any app once to warm it up, then run the tests with `-parallel-testing-enabled NO`. Test clones (`~/Library/Developer/XCTestDevices`) can be deleted with `xcrun simctl --set ~/Library/Developer/XCTestDevices delete all`; they fill the disk otherwise.
+- Before tapping in the Simulator, check the screen shows the sample matches: a relaunch (e.g. after switching apps) can start the app without `-sampleStore`, on the owner's own saved matches. Relaunch with `xcrun simctl launch <id> com.alancullinan.MatchTracker -sampleStore`.
 - **Previews:** render one at a time (parallel renders fail). If a render fails with "Library not loaded: /usr/lib/libSystem.B.dylib", the Preview simulator is wedged, not the code: run `xcrun simctl --set previews shutdown all` and render again. In a Preview, don't create an object (e.g. a `MatchSession`) in `onAppear`; it crashed the Preview runtime. Build it with a static `preview(...)` helper instead.
 
 ### One-off setup on the Mac
@@ -46,8 +48,10 @@ MatchTracker/                   Xcode project folder
     MatchScreen/                the match screen: `MatchSession` (applies, saves and undoes changes), theme, parts, `ScorerSheet`, `EventSheets` (foul, kickout, substitution and note sheets, and their shared parts, including the "When" time field), `EventListView` (+ `EventList`, its sections), `ClockEditor`, `EventText`
     Panels/                     player panels: `PanelList` (sort, save, delete), the list, the editor, `PanelPicker` and `PanelSuggestion`
     Players/                    `TeamSheetEditor` (a match's team sheet)
+    LiveActivity/               `MatchActivityContent` (match → Live Activity content, tested) and `LiveActivities` (start, update, end)
     Stats/                      the statistics screen: `StatsTable` (rows and formatting, tested) and `StatsView`
     Teams/                      team colour badge and picker (`KitColor.color` lives here, not in MatchCore)
+  MatchWidgets/                 widget extension (target `MatchWidgetsExtension`): the Live Activity's Lock Screen and Dynamic Island views. `MatchActivityAttributes.swift` is shared with the app target (a membership exception on the folder), so both use the same type
   MatchTrackerTests/            app tests (Swift Testing), run by CI
 MatchCore/                      local Swift package - the domain layer (linked as ../MatchCore)
   Package.swift
@@ -74,7 +78,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | `MatchEvent.swift` | `MatchEvent` and its `Kind` (shot, foul, card, kickout, substitution, note, periodEnd); `side` and `type` |
 | `MatchClock.swift` | Wall-clock timer: `elapsed(at:)`, `start(at:)`, `pause(at:)` |
 | `MatchPeriods.swift` | `isPlaying`, `displayName`, `match.start/pause/endPeriod(at:)`, `match.record(_:note:at:)`, `canRecordEvents`, `nextPlayingPeriod` |
-| `MatchSteps.swift` | `MatchStep` and `nextStep` / `takeNextStep(at:)` (the clock button's hold), `undoLastEvent()`, `undoPeriodStart()`, `lastPeriodEnd`, `MatchClock.text(seconds:)`, `MatchEvent.minute` |
+| `MatchSteps.swift` | `MatchStep` and `nextStep` / `takeNextStep(at:)` (the clock button's hold), `undoLastEvent()`, `undoPeriodStart()`, `lastPeriodEnd`, `match.clockText(at:)` (what the clock shows, incl. "31 min" in a break), `clockZero` (when a running clock read 0:00), `MatchClock.text(seconds:)`, `MatchEvent.minute` |
 | `ShotDetails.swift` | `ShotOutcome.alternatives(in:)`, `ShotType.options(for:)` (45 or 65), `match.updateShot(...)`, `match.deleteEvent(_:)`, `match.event(_:)` |
 | `EventDetails.swift` | `match.updateFoul/updateKickout/updateSubstitution/updateNote(...)`, `CardType.options(for:)` (no black card in ladies football or camogie), `CardType`/`FoulOutcome.displayName` |
 | `TimeEditing.swift` | `match.adjustClock(by:at:)`, `playedPeriods`, `timeLimits(for:in:)`, `updateTime(_:period:time:)`, `Match.maxEventTime` |
@@ -150,6 +154,12 @@ Rules of the sport and lessons from real bugs - keep them whatever the UI looks 
 - The timer is **wall-clock based**: running time = banked seconds + (now − `runningSince`), never a tick counter. This is what lets a Live Activity show a clock without the app running.
 
 - Stats: accuracy is scored shots / all shots, and is `nil` (not 0%) with no shots. Players are ranked by score, then jersey number; shots without a player are grouped last. Stats work on any set of events, so a single period can be shown.
+
+**Live Activity**
+- Shown from throw-in until the match is over (Full Time, or Full Time AET), through breaks; one match at a time (starting another ends the first). At full time it ends with the final score, which the system keeps on the Lock Screen for a while; going back to Not Started (undo) removes it at once; deleting the match ends it.
+- The match screen updates it on every change of the match (`onChange(of: session.match, initial: true)`), so the event list and sheets count too. The clock is never pushed each second: the activity gets `clockStartedAt` (MatchCore's `clockZero`) and the system counts up from it, the same wall-clock rule as the app.
+- `MatchActivityAttributes` holds plain values only (names, score text, RGB colours, period name, clock), so the widget doesn't link MatchCore. Its `Codable` shape is a hand-over format: change it additively.
+- Live Activities need `NSSupportsLiveActivities` (set on the app target) but no paid developer account; updates come from the app, not push notifications.
 
 **Players and panels**
 - Each team starts with 30 players, jersey numbers 1-30; players 31-40 can be added on demand (owner's choice: up to 40, added only when needed, so the scorer's team sheet stays short). Numbers always run 1 to n without gaps. The first 30 are never removed; an added player can be removed only if no event names them. Names are optional and can be edited any time.

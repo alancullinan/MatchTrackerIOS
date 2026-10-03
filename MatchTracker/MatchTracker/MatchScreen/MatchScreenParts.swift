@@ -20,7 +20,7 @@ struct ClockView<Control: View>: View {
                         .tracking(1.1)
                         .foregroundStyle(MatchTheme.gold)
                     TimelineView(.periodic(from: match.clock.runningSince ?? .now, by: 1)) { timeline in
-                        Text(clockText(at: timeline.date))
+                        Text(match.clockText(at: timeline.date))
                             .font(.system(size: 52, weight: .semibold))
                             .monospacedDigit()
                             .tracking(-1)
@@ -56,14 +56,6 @@ struct ClockView<Control: View>: View {
         return period.isPlaying && !match.clock.isRunning ? "\(name) · PAUSED" : name
     }
 
-    private func clockText(at now: Date) -> String {
-        let period = match.clock.period
-        if period.isPlaying || period == .notStarted {
-            return MatchClock.text(seconds: match.clock.elapsed(at: now))
-        }
-        guard let lastEnd = match.lastPeriodEnd else { return "–" }
-        return "\(lastEnd.time / 60) min"
-    }
 }
 
 /// The clock button's face: a gold disc with a dark glyph inside a progress

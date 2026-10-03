@@ -101,6 +101,27 @@ extension MatchClock {
     }
 }
 
+extension Match {
+    /// What the match clock shows at `now`: the time into a playing period
+    /// (running or paused), "00:00" before throw-in, and during a break how
+    /// long the last period ran ("31 min"), never 00:00.
+    public func clockText(at now: Date) -> String {
+        let period = clock.period
+        if period.isPlaying || period == .notStarted {
+            return MatchClock.text(seconds: clock.elapsed(at: now))
+        }
+        guard let lastEnd = lastPeriodEnd else { return "–" }
+        return "\(lastEnd.time / 60) min"
+    }
+
+    /// When a running clock read 0:00, so anything (a Live Activity, a timer
+    /// text) can count up from it without being told each second. `nil` while
+    /// the clock is stopped.
+    public var clockZero: Date? {
+        clock.runningSince?.addingTimeInterval(-Double(clock.bankedSeconds))
+    }
+}
+
 extension MatchEvent {
     /// The match minute the event happened in, as written on a report: the
     /// first minute of a period is 1'.

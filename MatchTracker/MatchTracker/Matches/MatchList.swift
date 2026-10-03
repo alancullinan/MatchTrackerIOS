@@ -1,4 +1,5 @@
 import Foundation
+import MatchCore
 import SwiftData
 
 /// The match list's rules, kept out of the view so they can be tested.
@@ -21,7 +22,9 @@ enum MatchList {
 
     /// Deletes a match and saves straight away, so it can't come back.
     static func delete(_ stored: StoredMatch, from context: ModelContext) throws {
+        let id = MatchID(stored.id)
         context.delete(stored)
         try context.save()
+        LiveActivities.end(matchID: id)
     }
 }

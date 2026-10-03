@@ -108,7 +108,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 
 ## Phase 6: iOS extras
 
-- [ ] Live Activity and Dynamic Island (score, period, running clock)
+- [x] Live Activity and Dynamic Island (score, period, running clock): a widget extension; the system counts the clock up from when it read 0:00
 - [x] Haptics on score entry
 - [ ] Keep screen awake during a live match (low priority, owner's call: the app is quick to reopen, and the Live Activity shows the score meanwhile)
 - [ ] v1.1: widgets, Apple Watch app, App Intents / Siri, iPad layout
