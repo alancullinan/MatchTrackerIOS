@@ -142,8 +142,8 @@ final class MatchSession {
 
     /// Saves an edited team sheet. See `Match.updateRoster`.
     @discardableResult
-    func updateRoster(_ side: TeamSide, players: [Player]) -> Bool {
-        update { $0.updateRoster(side, players: players) }
+    func updateRoster(_ side: TeamSide, players: [Player], fromPanel panelID: PanelID? = nil) -> Bool {
+        update { $0.updateRoster(side, players: players, fromPanel: panelID) }
     }
 
     /// Moves an event to another time or period. See `Match.updateTime`.

@@ -44,7 +44,7 @@ MatchTracker/                   Xcode project folder
     Storage/                    SwiftData records (StoredMatch, StoredPanel) and the store
     Matches/                    the match list (the home screen), its rows, and sample matches for Previews
     MatchScreen/                the match screen: `MatchSession` (applies, saves and undoes changes), theme, parts, `ScorerSheet`, `EventSheets` (foul, kickout, substitution and note sheets, and their shared parts, including the "When" time field), `EventListView` (+ `EventList`, its sections), `ClockEditor`, `EventText`
-    Panels/                     player panels: `PanelList` (sort, save, delete), the list and the editor
+    Panels/                     player panels: `PanelList` (sort, save, delete), the list, the editor, `PanelPicker` and `PanelSuggestion`
     Players/                    `TeamSheetEditor` (a match's team sheet)
     Teams/                      team colour badge and picker (`KitColor.color` lives here, not in MatchCore)
   MatchTrackerTests/            app tests (Swift Testing), run by CI
@@ -81,6 +81,7 @@ The repo must not live in an iCloud-synced folder (Desktop, Documents, iCloud Dr
 | `Score.swift` | `Score` (goals, points, two-pointers, total, "1-05"), `match.score(_:)`, `MatchType.allowsTwoPointers` |
 | `Stats.swift` | `match.stats(_:)` → `TeamStats`: shooting, per-player stats with score by shot type, fouls, cards, substitutions |
 | `Roster.swift` | `match.updateRoster(_:players:)` (the team sheet editor's rules), `isReferenced(_:)`, `team.nextExtraPlayer()` |
+| `PanelImport.swift` | `team.players(importing:)`, `match.importPanel(_:into:)`, `canImportPanel` (before throw-in), `updateRoster(_:players:fromPanel:)` (remembers `lastPanelID`) |
 | `PlayerPanel.swift` | Panels of 30 slots, up to 40 (`PlayerPanel.empty`, `startingSize`, `maxSize`), `panel.update(name:slots:)` (the panel editor's rules), `nextExtraSlot()`, `namedCount` |
 | `Identifiers.swift`, `Enums.swift` | Typed UUID ids; the enums |
 
@@ -153,7 +154,8 @@ Rules of the sport and lessons from real bugs - keep them whatever the UI looks 
 - Each team starts with 30 players, jersey numbers 1-30; players 31-40 can be added on demand (owner's choice: up to 40, added only when needed, so the scorer's team sheet stays short). Numbers always run 1 to n without gaps. The first 30 are never removed; an added player can be removed only if no event names them. Names are optional and can be edited any time.
 - A panel has **30 slots, up to 40** like a team (31-40 added on demand, and only the last added one removed); the slot is the jersey number. Empty slots are kept; panels are never sorted or compacted. A panel needs a name.
 - Panels live in `Panels/`: the list (sorted by name, Finder-style) is reached from the match list's toolbar; tap one to edit it, swipe to delete (with a confirmation). Nothing in the editor is saved until Done. Deleting a panel never touches matches: their names were copied in.
-- Panel import into a team is allowed only before throw-in, overwrites names in place and **never regenerates player ids** (events reference them).
+- Panel import into a team is allowed only before throw-in, overwrites names in place (an empty slot clears the name) and **never regenerates player ids** (events reference them); players 31-40 are added or left out to match the panel's size. The team remembers it as `lastPanelID`.
+- Importing happens on the team sheet (More › Team Sheet › Import from Panel…) into the unsaved sheet, so Done keeps it and Cancel drops it. The picker suggests the team's last panel, or else the panel last imported for a team of the same name (ignoring case and accents) in the most recent other match (`PanelSuggestion`). "Save as New Panel" on the team sheet saves its names as a panel named after the team, any time.
 
 **Data safety**
 - iCloud sync is not a backup: deleting a match on one device deletes it everywhere. Deleting a match always needs a confirmation.
@@ -206,7 +208,7 @@ The agreed design is the glass restyle: https://claude.ai/artifact/2QBd8XiVyBibp
 - **Substitution**: one team sheet; pick the player coming off, then it moves on to the player coming on. Picking the same player for both moves them across.
 - **Events list**: from the toolbar (not by tapping the last-event card: on smaller phones it covers the second team's More button until scrolled, so a missed tap would open the list). Newest first, by period; tap an event for its sheet, swipe to delete (not a period end).
 - **Times**: every event's sheet has a collapsed "When" to change its period and time. Tapping the clock adjusts it; the period only changes through the clock button.
-- **Team sheet**: More › Team Sheet, available any time (the event rows are disabled while the ball isn't in play; this one isn't). A name per number, Next moves to the next number, "Add Player 31" up to 40, swipe to remove an unused added player. Nothing saved until Done; swipe-down is blocked while there are changes.
+- **Team sheet**: More › Team Sheet, available any time (the event rows are disabled while the ball isn't in play; this one isn't). A name per number, Next moves to the next number, "Add Player 31" up to 40, swipe to remove an unused added player. Before throw-in, "Import from Panel…"; any time, "Save as New Panel". Nothing saved until Done; swipe-down is blocked while there are changes.
 - **Note**: a team's from More, the match's from the ••• menu. The text is saved however the sheet closes; Cancel or blank text deletes it.
 
 ## Commands
