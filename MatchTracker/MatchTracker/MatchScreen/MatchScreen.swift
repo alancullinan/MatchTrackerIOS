@@ -47,6 +47,7 @@ struct MatchScreen: View {
     @State private var isEditing = false
     @State private var moreFor: TeamSide?
     @State private var showsEvents = false
+    @State private var showsStats = false
     @State private var editsClock = false
     @State private var teamSheetFor: TeamSide?
 
@@ -89,9 +90,16 @@ struct MatchScreen: View {
             EventListView(session: session)
                 .matchScreenAppearance()
         }
+        .navigationDestination(isPresented: $showsStats) {
+            StatsView(session: session)
+                .matchScreenAppearance()
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Events", systemImage: "list.bullet") { showsEvents = true }
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button("Stats", systemImage: "chart.bar") { showsStats = true }
             }
             ToolbarItem(placement: .primaryAction) {
                 Menu("More Options", systemImage: "ellipsis") {

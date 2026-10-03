@@ -100,3 +100,34 @@ private func newMatch() -> Match {
 @Test func onlyGoalsPointsAndTwoPointersScore() {
     #expect(ShotOutcome.allCases.filter(\.scores) == [.goal, .point, .twoPointer])
 }
+
+@Test func ownKickoutsAreCountedWonAndLost() {
+    var match = newMatch()
+    match.events = [
+        MatchEvent(period: .firstHalf, time: 0, kind: .kickout(side: .team1, player: nil, won: true)),
+        MatchEvent(period: .firstHalf, time: 0, kind: .kickout(side: .team1, player: nil, won: true)),
+        MatchEvent(period: .firstHalf, time: 0, kind: .kickout(side: .team1, player: nil, won: false)),
+        MatchEvent(period: .firstHalf, time: 0, kind: .kickout(side: .team2, player: nil, won: false)),
+    ]
+    let team1 = match.stats(.team1)
+    #expect(team1.kickoutsWon == 2)
+    #expect(team1.kickoutsLost == 1)
+    #expect(team1.kickoutRetention == 2.0 / 3.0)
+    #expect(match.stats(.team2).kickoutsLost == 1)
+}
+
+@Test func noKickoutsMeansNoRetention() {
+    #expect(newMatch().stats(.team1).kickoutRetention == nil)
+}
+
+@Test func statsCanBeForOnePeriod() {
+    var match = newMatch()
+    match.events = [
+        shot(.team1, nil, .goal, .fromPlay, .firstHalf),
+        shot(.team1, nil, .point, .fromPlay, .secondHalf),
+        shot(.team1, nil, .wide, .fromPlay, .secondHalf),
+    ]
+    #expect(match.stats(.team1, period: .firstHalf).score == Score(goals: 1))
+    #expect(match.stats(.team1, period: .secondHalf).shooting.shots == 2)
+    #expect(match.stats(.team1, period: nil) == match.stats(.team1))
+}
