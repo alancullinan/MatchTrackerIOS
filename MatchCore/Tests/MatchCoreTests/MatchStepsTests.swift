@@ -177,3 +177,24 @@ private let point = MatchEvent.Kind.shot(side: .team1, player: nil, outcome: .po
     #expect(MatchEvent(period: .firstHalf, time: 59, kind: point).minute == 1)
     #expect(MatchEvent(period: .firstHalf, time: 22 * 60 + 5, kind: point).minute == 23)
 }
+
+@Test func theClockTextShowsTimeInPlayAndHowLongTheLastPeriodRanInABreak() {
+    let t0 = Date(timeIntervalSince1970: 1_754_800_000)
+    var match = Match.new(matchType: .football, team1Name: "A", team2Name: "B", date: t0)
+    #expect(match.clockText(at: t0) == "00:00")
+    match.start(at: t0)
+    #expect(match.clockText(at: t0.addingTimeInterval(605)) == "10:05")
+    match.endPeriod(at: t0.addingTimeInterval(1865))
+    #expect(match.clockText(at: t0.addingTimeInterval(2000)) == "31 min")
+}
+
+@Test func theClockZeroIsWhenARunningClockReadZero() {
+    let t0 = Date(timeIntervalSince1970: 1_754_800_000)
+    var match = Match.new(matchType: .football, team1Name: "A", team2Name: "B", date: t0)
+    #expect(match.clockZero == nil)
+    match.start(at: t0)
+    match.pause(at: t0.addingTimeInterval(300))
+    #expect(match.clockZero == nil)
+    match.start(at: t0.addingTimeInterval(400))
+    #expect(match.clockZero == t0.addingTimeInterval(100))
+}

@@ -4,19 +4,24 @@ import SwiftUI
 extension KitColor {
     /// How the colour looks. Strong, saturated shades, so they read in sunlight.
     var color: Color {
+        Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
+    }
+
+    /// The shade as red, green and blue from 0 to 1 (also handed to the Live Activity).
+    var rgb: (red: Double, green: Double, blue: Double) {
         switch self {
-        case .white: Color(red: 1, green: 1, blue: 1)
-        case .black: Color(red: 0.11, green: 0.11, blue: 0.12)
-        case .red: Color(red: 0.82, green: 0.13, blue: 0.18)
-        case .maroon: Color(red: 0.48, green: 0.12, blue: 0.24)
-        case .green: Color(red: 0.12, green: 0.55, blue: 0.23)
-        case .gold: Color(red: 0.95, green: 0.72, blue: 0.02)
-        case .orange: Color(red: 0.95, green: 0.55, blue: 0)
-        case .primrose: Color(red: 0.96, green: 0.89, blue: 0.48)
-        case .blue: Color(red: 0.12, green: 0.31, blue: 0.75)
-        case .skyBlue: Color(red: 0.42, green: 0.71, blue: 0.93)
-        case .navy: Color(red: 0.11, green: 0.16, blue: 0.29)
-        case .purple: Color(red: 0.42, green: 0.17, blue: 0.57)
+        case .white: (1, 1, 1)
+        case .black: (0.11, 0.11, 0.12)
+        case .red: (0.82, 0.13, 0.18)
+        case .maroon: (0.48, 0.12, 0.24)
+        case .green: (0.12, 0.55, 0.23)
+        case .gold: (0.95, 0.72, 0.02)
+        case .orange: (0.95, 0.55, 0)
+        case .primrose: (0.96, 0.89, 0.48)
+        case .blue: (0.12, 0.31, 0.75)
+        case .skyBlue: (0.42, 0.71, 0.93)
+        case .navy: (0.11, 0.16, 0.29)
+        case .purple: (0.42, 0.17, 0.57)
         }
     }
 }
