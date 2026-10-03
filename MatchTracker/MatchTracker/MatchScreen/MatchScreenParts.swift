@@ -241,7 +241,18 @@ struct EventIcon: View {
     }
 }
 
+/// The grab handle on the last-event card and the event drawer.
+struct DrawerHandle: View {
+    var body: some View {
+        Capsule()
+            .fill(.white.opacity(0.4))
+            .frame(width: 36, height: 5)
+            .accessibilityHidden(true)
+    }
+}
+
 /// The latest thing that happened, with Undo for a few seconds after each entry.
+/// The top of the match screen's event drawer, which draws its glass.
 struct LastEventCard: View {
     let title: String
     let detail: String
@@ -287,12 +298,6 @@ struct LastEventCard: View {
         .padding(.trailing, 12)
         .padding(.vertical, 14)
         .frame(minHeight: 76)
-        .matchGlass(in: .rect(cornerRadius: 38))
-        .overlay {
-            if showsUndo {
-                RoundedRectangle(cornerRadius: 38).strokeBorder(MatchTheme.gold, lineWidth: 2)
-            }
-        }
         .animation(.default, value: showsUndo)
     }
 }

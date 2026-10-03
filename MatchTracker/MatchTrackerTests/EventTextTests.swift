@@ -15,7 +15,7 @@ struct EventTextTests {
         let event = try #require(recorded)
 
         #expect(EventText.title(event, in: match) == "Point · Na Fianna · No. 11 Seán Ryan")
-        #expect(EventText.detail(event, in: match) == "1st Half · 23' · 0-01 v 0-00")
+        #expect(EventText.detail(event, in: match) == "1st Half · 23 mins · 0-01 v 0-00")
     }
 
     @Test func anUnnamedPlayerShowsTheirNumber() {

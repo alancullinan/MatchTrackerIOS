@@ -1,24 +1,12 @@
 import MatchCore
 
-/// The events list's sections: one per period with events, newest period
-/// first and newest event first within it. Kept out of the view so it can be tested.
+/// The event drawer's list: every event, newest first, less the one the
+/// last-event card already shows. Kept out of the view so it can be tested.
 struct EventList {
-    struct Section: Equatable {
-        let period: MatchPeriod
-        let events: [MatchEvent]
-    }
+    let events: [MatchEvent]
 
-    let sections: [Section]
-
-    init(_ match: Match) {
-        var sections: [Section] = []
-        for event in match.eventsNewestFirst {
-            if let last = sections.last, last.period == event.period {
-                sections[sections.count - 1] = Section(period: last.period, events: last.events + [event])
-            } else {
-                sections.append(Section(period: event.period, events: [event]))
-            }
-        }
-        self.sections = sections
+    /// `excluding` leaves out one event: the one on the last-event card.
+    init(_ match: Match, excluding excluded: EventID? = nil) {
+        events = match.eventsNewestFirst.filter { $0.id != excluded }
     }
 }

@@ -1,84 +1,69 @@
 import MatchCore
 import SwiftUI
 
-/// Every event in the match, newest first, grouped by period. Tap one to
-/// change its details or time; swipe to delete it.
+/// Every event in the match, newest first, shown in the match screen's event
+/// drawer under the last-event card (which opens only when there's something to
+/// list). Each row looks like the card, period included, so there are no
+/// period headings. Tap one to change its details or time; swipe to delete it.
 struct EventListView: View {
     let session: MatchSession
-
-    @State private var editing: EventID?
+    /// An event to leave out: the one the last-event card shows above the list.
+    var excluding: EventID?
+    /// Opens the event's details sheet.
+    let onSelect: (EventID) -> Void
 
     private var match: Match { session.match }
 
     var body: some View {
-        let list = EventList(match)
-        List {
-            ForEach(list.sections, id: \.period) { section in
-                Section(section.period.displayName) {
-                    ForEach(section.events, id: \.id) { event in
-                        Button { editing = event.id } label: { row(event) }
-                            .tint(.primary)
-                            .swipeActions {
-                                // A period end is part of the match's progress, so it can't be deleted here.
-                                if event.kind != .periodEnd {
-                                    Button("Delete", systemImage: "trash", role: .destructive) {
-                                        session.deleteEvent(event.id)
-                                    }
-                                }
-                            }
+        List(EventList(match, excluding: excluding).events, id: \.id) { event in
+            Button { onSelect(event.id) } label: { row(event) }
+                .tint(.primary)
+                .listRowBackground(Color.clear)
+                .listRowInsets(Self.rowInsets)
+                .swipeActions {
+                    // A period end is part of the match's progress, so it can't be deleted here.
+                    if event.kind != .periodEnd {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
+                            session.deleteEvent(event.id)
+                        }
                     }
                 }
-            }
         }
-        .overlay {
-            if list.sections.isEmpty {
-                ContentUnavailableView("No Events Yet", systemImage: "list.bullet",
-                                       description: Text("Scores, fouls and everything else appear here as they're recorded."))
-            }
-        }
-        .navigationTitle("Events")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: Binding(get: { editing.map(EditedEvent.init) }, set: { editing = $0?.eventID })) { item in
-            EventDetailsSheet(session: session, eventID: item.eventID)
-                .matchSheetAppearance()
-        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
     }
 
+    /// The card's padding, so the rows line up with it.
+    private static let rowInsets = EdgeInsets(top: 14, leading: 22, bottom: 14, trailing: 12)
+
+    /// Styled like the last-event card, so the drawer reads as one list.
     private func row(_ event: MatchEvent) -> some View {
         HStack(spacing: 12) {
             EventIcon(event)
             VStack(alignment: .leading, spacing: 2) {
                 Text(EventText.title(event, in: match))
-                    .font(.callout.weight(.semibold))
-                Text(EventText.detail(event, in: match, showsPeriod: false))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 17, weight: .bold))
+                Text(EventText.detail(event, in: match))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.7))
                     .monospacedDigit()
                 // A note's text is its title; any other event's note goes underneath.
                 if let note = event.note, event.type != .note {
                     Text(note)
-                        .font(.footnote)
+                        .font(.system(size: 13))
                         .italic()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.7))
                 }
             }
         }
-        .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
     }
 }
 
-private struct EditedEvent: Identifiable {
-    let eventID: EventID
-    var id: EventID { eventID }
-}
-
 #if DEBUG
 #Preview("Events") {
-    NavigationStack { EventListView(session: .preview(.fullTimeAfterExtraTime)) }
-}
-
-#Preview("No events") {
-    NavigationStack { EventListView(session: .preview(.notStarted)) }
+    EventListView(session: .preview(.fullTimeAfterExtraTime), onSelect: { _ in })
+        .background { GrassBackground() }
+        .matchScreenAppearance()
 }
 #endif
