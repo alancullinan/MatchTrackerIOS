@@ -89,7 +89,7 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 ## Phase 3: Players
 
 - [x] Team rosters: 30 players, up to 40 added on demand; names editable any time from More › Team Sheet
-- [ ] Player panels: list and editor (30 slots, up to 40 like rosters)
+- [x] Player panels: list and editor (30 slots, up to 40 like rosters)
 - [ ] Import a panel into a team, before throw-in only
 - [ ] Remember the last panel per team per match
 

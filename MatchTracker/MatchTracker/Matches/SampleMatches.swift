@@ -59,11 +59,26 @@ enum SampleMatches {
         try context.store(Match.new(matchType: .football, team1Name: "Team A", team2Name: "Team B",
                                     competition: "Friendly", date: now.addingTimeInterval(-30 * day)))
 
+        // Panels: one with names and two added players, one empty.
+        try context.store(panel)
+        try context.store(PlayerPanel.empty(name: "U14 Girls", createdAt: now))
+
         // A record that can't be read, as if written by a newer version of the app.
         let unreadable = try context.store(Match.new(matchType: .hurling, team1Name: "Raheny", team2Name: "Craobh Chiaráin",
                                                      competition: "League", date: now.addingTimeInterval(-60 * day)))
         unreadable.clockPeriod = "penaltyShootout"
     }
+
+    /// A panel with most of the starting 15 named and two added players.
+    static let panel: PlayerPanel = {
+        var panel = PlayerPanel.empty(name: "Senior Footballers")
+        let names = ["Ciarán Walsh", "Seán Brennan", "Aoife Casey", "Niamh Ryan", "Tomás Doyle",
+                     "Eoin Byrne", "Conor Ryan", "Brian Nolan", nil, "Cian O'Neill", "Pádraig Kelly", "Dara Lynch"]
+        for (index, name) in names.enumerated() { panel.slots[index].name = name }
+        panel.slots.append(PanelSlot(jerseyNumber: 31, name: "Jack Moran"))
+        panel.slots.append(PanelSlot(jerseyNumber: 32))
+        return panel
+    }()
 
     /// States the match screen can be in, for its Previews.
     enum ScreenState {

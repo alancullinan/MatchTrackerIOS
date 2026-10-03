@@ -132,7 +132,7 @@ struct StorageTests {
 
         let read = try #require(try context.storedPanel(id: panel.id)).panel()
         #expect(read == panel)
-        #expect(read.slots.map(\.jerseyNumber) == Array(1...PlayerPanel.size))
+        #expect(read.slots.map(\.jerseyNumber) == Array(1...PlayerPanel.startingSize))
     }
 
     @Test func storingAPanelAgainUpdatesTheSameRecord() throws {

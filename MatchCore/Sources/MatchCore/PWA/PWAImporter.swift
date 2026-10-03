@@ -66,7 +66,7 @@ public enum PWAImporter {
             panelIDs[pwaPanel.id] = panel.id
             result.panels.append(panel)
             if !dropped.isEmpty {
-                result.warnings.append("Panel \"\(pwaPanel.name)\" has more than \(PlayerPanel.size) players; not imported: \(dropped.joined(separator: ", ")).")
+                result.warnings.append("Panel \"\(pwaPanel.name)\" has more than \(PlayerPanel.startingSize) players; not imported: \(dropped.joined(separator: ", ")).")
             }
         }
 
@@ -263,10 +263,10 @@ public enum PWAImporter {
     /// first free slot; a legacy panel with no numbers fills 1..N in stored order.
     /// Returns the names that did not fit.
     static func convert(_ pwa: PWAPanel) -> (PlayerPanel, dropped: [String]) {
-        var slots: [String?] = Array(repeating: nil, count: PlayerPanel.size)
-        var filled = Array(repeating: false, count: PlayerPanel.size)
+        var slots: [String?] = Array(repeating: nil, count: PlayerPanel.startingSize)
+        var filled = Array(repeating: false, count: PlayerPanel.startingSize)
         var dropped: [String] = []
-        let validRange = 1...PlayerPanel.size
+        let validRange = 1...PlayerPanel.startingSize
 
         if pwa.players.contains(where: { $0.jerseyNumber != nil }) {
             var placed = Set<Int>()
@@ -288,7 +288,7 @@ public enum PWAImporter {
             }
         } else {
             for (index, player) in pwa.players.enumerated() {
-                if index < PlayerPanel.size {
+                if index < PlayerPanel.startingSize {
                     slots[index] = player.name
                 } else if Player.cleaned(player.name) != nil {
                     dropped.append(player.name.trimmingCharacters(in: .whitespacesAndNewlines))
