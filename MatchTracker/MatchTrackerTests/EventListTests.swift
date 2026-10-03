@@ -27,6 +27,23 @@ struct EventListTests {
         #expect(list.sections[1].events.map(\.id) == [end.id, second.id, first.id])
     }
 
+    @Test func theEventOnTheCardIsLeftOut() throws {
+        var match = Match.new(matchType: .football, team1Name: "A", team2Name: "B", date: t0)
+        match.start(at: t0)
+        let firstRecorded = match.record(.kickout(side: .team1, player: nil, won: true), at: at(60))
+        let first = try #require(firstRecorded)
+        match.endPeriod(at: at(1800))
+        match.start(at: at(2400))
+        let lastRecorded = match.record(.note(side: nil), note: "Wind", at: at(2500))
+        let last = try #require(lastRecorded)
+
+        let list = EventList(match, excluding: last.id)
+        // The 2nd half had only that event, so its section goes too.
+        #expect(list.sections.map(\.period) == [.firstHalf])
+        #expect(list.sections[0].events.map(\.id).contains(first.id))
+        #expect(!list.sections.flatMap(\.events).contains { $0.id == last.id })
+    }
+
     @Test func aMatchWithNoEventsHasNoSections() {
         let match = Match.new(matchType: .hurling, team1Name: "A", team2Name: "B", date: t0)
         #expect(EventList(match).sections.isEmpty)

@@ -10,9 +10,10 @@ struct EventList {
 
     let sections: [Section]
 
-    init(_ match: Match) {
+    /// `excluding` leaves out one event: the one the last-event card already shows.
+    init(_ match: Match, excluding excluded: EventID? = nil) {
         var sections: [Section] = []
-        for event in match.eventsNewestFirst {
+        for event in match.eventsNewestFirst where event.id != excluded {
             if let last = sections.last, last.period == event.period {
                 sections[sections.count - 1] = Section(period: last.period, events: last.events + [event])
             } else {

@@ -5,13 +5,15 @@ import SwiftUI
 /// match screen's event drawer. Tap one to change its details or time; swipe to delete it.
 struct EventListView: View {
     let session: MatchSession
+    /// An event to leave out: the one the last-event card shows above the list.
+    var excluding: EventID?
     /// Opens the event's details sheet.
     let onSelect: (EventID) -> Void
 
     private var match: Match { session.match }
 
     var body: some View {
-        let list = EventList(match)
+        let list = EventList(match, excluding: excluding)
         List {
             ForEach(list.sections, id: \.period) { section in
                 Section(section.period.displayName) {
