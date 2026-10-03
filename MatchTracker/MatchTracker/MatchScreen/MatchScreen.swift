@@ -21,7 +21,7 @@ struct MatchScreenDestination: View {
             )
         } else {
             // A real view while loading: a task on an empty view never runs.
-            PitchBackground()
+            GrassBackground()
                 .task { load() }
         }
     }
@@ -59,16 +59,15 @@ struct MatchScreen: View {
         ScrollView {
             VStack(spacing: 14) {
                 if !match.competition.isEmpty {
-                    Text(match.competition.uppercased())
-                        .font(MatchTheme.display(15))
-                        .tracking(2)
-                        .foregroundStyle(MatchTheme.muted)
+                    Text(match.competition)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.85))
                         .multilineTextAlignment(.center)
                 }
-                ClockView(match: match)
-                    .contentShape(.rect)
-                    .onTapGesture { if match.clock.period.isPlaying { editsClock = true } }
-                    .accessibilityAction(named: "Adjust clock") { if match.clock.period.isPlaying { editsClock = true } }
+                ClockView(match: match, hint: clockHint,
+                          onAdjust: { if match.clock.period.isPlaying { editsClock = true } }) {
+                    clockButton
+                }
                 ForEach(TeamSide.allCases, id: \.self) { side in
                     TeamCard(team: match[side], score: match.score(side), flagsEnabled: match.canRecordEvents,
                              onScore: { session.perform(.score(side, $0), at: .now) },
@@ -80,10 +79,14 @@ struct MatchScreen: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .safeAreaInset(edge: .bottom) { thumbZone }
-        .background { PitchBackground() }
+        .background { GrassBackground() }
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+        // Glass on the grass reads best in dark, so this screen and its sheets always are.
+        .matchScreenAppearance()
         .navigationDestination(isPresented: $showsEvents) {
             EventListView(session: session)
+                .matchScreenAppearance()
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -109,21 +112,26 @@ struct MatchScreen: View {
         }
         .sheet(isPresented: $editsClock) {
             ClockEditor(session: session)
+                .matchSheetAppearance()
         }
         .sheet(isPresented: $isEditing, onDismiss: session.reload) {
             MatchFormView(editing: match)
+                .matchSheetAppearance()
         }
         .sheet(item: Binding(get: { moreFor.map(SheetTeam.init) }, set: { moreFor = $0?.side })) { item in
             MoreSheet(teamName: EventText.teamName(match[item.side]), side: item.side, canRecord: match.canRecordEvents,
                       onRecord: { session.perform($0, at: .now) },
                       onTeamSheet: { teamSheetFor = item.side })
+                .matchSheetAppearance()
         }
         .sheet(item: Binding(get: { teamSheetFor.map(SheetTeam.init) }, set: { teamSheetFor = $0?.side })) { item in
             TeamSheetEditor(session: session, side: item.side)
+                .matchSheetAppearance()
         }
         .sheet(item: Binding(get: { session.detailsEvent.map(SheetEvent.init) },
                              set: { session.detailsEvent = $0?.eventID })) { item in
             EventDetailsSheet(session: session, eventID: item.eventID)
+                .matchSheetAppearance()
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: session.changeCount)
         .task(id: session.undoable) {
@@ -146,18 +154,6 @@ struct MatchScreen: View {
         VStack(spacing: 10) {
             lastEventCard
             HStack(spacing: 10) {
-                if match.clock.period.isPlaying {
-                    Button {
-                        session.perform(match.clock.isRunning ? .pause : .resume, at: .now)
-                    } label: {
-                        Image(systemName: match.clock.isRunning ? "pause.fill" : "play.fill")
-                            .font(.title2)
-                            .frame(width: 58, height: 58)
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 18))
-                    .accessibilityLabel(match.clock.isRunning ? "Pause clock" : "Resume clock")
-                }
                 Button {
                     session.perform(.nextStep, at: .now)
                 } label: {
@@ -176,6 +172,24 @@ struct MatchScreen: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 8)
+    }
+
+    /// The gold button in the clock capsule: pauses and resumes play.
+    private var clockButton: some View {
+        let playing = match.clock.period.isPlaying
+        return Button {
+            session.perform(match.clock.isRunning ? .pause : .resume, at: .now)
+        } label: {
+            ClockButtonFace(systemImage: playing && match.clock.isRunning ? "pause.fill" : "play.fill")
+        }
+        .buttonStyle(.plain)
+        .disabled(!playing)
+        .accessibilityLabel(match.clock.isRunning ? "Pause clock" : "Resume clock")
+    }
+
+    private var clockHint: String {
+        guard match.clock.period.isPlaying else { return "" }
+        return match.clock.isRunning ? "Tap to pause" : "Tap to resume"
     }
 
     @ViewBuilder
@@ -209,6 +223,22 @@ struct MatchScreen: View {
         .modelContainer(MatchSession.previewContainer)
 }
 
+#Preview("Not started, no colours") {
+    NavigationStack { MatchScreen(session: .preview(.notStarted)) }
+}
+
+#Preview("1st half, running") {
+    NavigationStack { MatchScreen(session: .preview(.firstHalf)) }
+}
+
+#Preview("1st half, paused") {
+    NavigationStack { MatchScreen(session: .preview(.paused)) }
+}
+
+#Preview("Half time") {
+    NavigationStack { MatchScreen(session: .preview(.halfTime)) }
+}
+
 #Preview("2nd half, running") {
     NavigationStack { MatchScreen(session: .preview(.secondHalf)) }
 }
@@ -221,16 +251,16 @@ struct MatchScreen: View {
     return NavigationStack { MatchScreen(session: session) }
 }
 
-#Preview("Not started, no colours") {
-    NavigationStack { MatchScreen(session: .preview(.notStarted)) }
-}
-
-#Preview("Half time") {
-    NavigationStack { MatchScreen(session: .preview(.halfTime)) }
+#Preview("Full time") {
+    NavigationStack { MatchScreen(session: .preview(.fullTime)) }
 }
 
 #Preview("Full time after extra time") {
     NavigationStack { MatchScreen(session: .preview(.fullTimeAfterExtraTime)) }
+}
+
+#Preview("Long hurling scores") {
+    NavigationStack { MatchScreen(session: .preview(.longScores)) }
 }
 
 extension MatchSession {

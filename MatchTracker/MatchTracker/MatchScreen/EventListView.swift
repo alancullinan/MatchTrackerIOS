@@ -40,6 +40,7 @@ struct EventListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: Binding(get: { editing.map(EditedEvent.init) }, set: { editing = $0?.eventID })) { item in
             EventDetailsSheet(session: session, eventID: item.eventID)
+                .matchSheetAppearance()
         }
     }
 

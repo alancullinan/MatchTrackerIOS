@@ -168,16 +168,17 @@ The app is used one-handed, on a sideline, often in rain or sun, while watching 
 
 ### Match screen: look and flow (agreed with the owner)
 
-The agreed design, tried as a clickable mockup: https://claude.ai/artifact/VpABcEtAGK356oxp7Qbx3R (private to the owner). Build the real screen to this; the reasons are in `PLAN.md` → Decisions.
+The agreed design is the glass restyle: https://claude.ai/artifact/2QBd8XiVyBibpvRuRhrcRA (private to the owner, board "A"). Its handoff - spec, static HTML with exact sizes and colours, and screenshots - is in `design/match-screen-glass/`. Build the real screen to this; the reasons are in `PLAN.md` → Decisions.
 
 **Look**
-- A calm pitch-green background (faint mowing stripes, no photo); cards and the top bar in iOS glass. Light and dark modes both readable in sunlight.
-- Gold for the period name and the main button; narrow, condensed scoreboard lettering for the clock and scores.
+- **Always dark**, with the sheets it opens; the rest of the app follows the system setting. Use `matchScreenAppearance()` on the screen and anything pushed from it, and `matchSheetAppearance()` on each sheet's content (`MatchTheme.swift`). Never `preferredColorScheme` on the screen itself: it turns the whole window dark, so the match list flashes dark during the push.
+- Background: a softened grass photo (`GrassBackground`, asset `GrassBackground`) under a faint dark-green shade. Panels are system Liquid Glass (`matchGlass(in:)`); with Reduce Transparency the photo becomes plain pitch green (`#10301C`) and the panels solid.
+- Yellow `#FFD60A` (`MatchTheme.gold`) for the period name and the clock button. Standard SF Pro everywhere, with monospaced digits for every changing number.
 - Each team has its own colours (chosen per team when creating the match); its card is tinted with them and shows a small colour badge by the name.
 
 **Layout, top to bottom**
-- Top bar: Back on the left; Stats and a ••• menu (share, live link, edit match, team colours, scorer settings) on the right.
-- Competition name, small. Then the period name (gold) and the big clock. During a break the clock shows how long the last half ran, e.g. "Full Time · 31 min", never 00:00.
+- Top bar: the system toolbar (on iOS 26 a round glass Back button, and the trailing items grouped in one glass capsule). Back on the left; the Events list and the ••• menu (match note, adjust clock, edit match, scorer settings) on the right. Stats joins them when its screen is built (Phase 5), as will share and live link.
+- Competition name, small. Then the clock capsule: a glass capsule with the period name (gold, "· PAUSED" while paused) over the big clock on the left and the round yellow clock button on the right, and a hint line underneath. During a break the clock shows how long the last half ran, e.g. "31 min", never 00:00. Tapping the clock text adjusts it.
 - Two team cards, stacked. Each: team name centred on top; then **green goal flag · score with the total underneath · white point flag** in one row; one **More** button below. No two-pointer (orange) flag on the card.
 - Thumb zone at the bottom: the last event (with Undo and Details for a few seconds after each entry), and one big button that always says the next step (Start 1st Half, End 1st Half, Start 2nd Half, End 2nd Half, Start Extra Time, ...), with a pause/resume button beside it during play. Flags are disabled when the ball isn't in play.
 

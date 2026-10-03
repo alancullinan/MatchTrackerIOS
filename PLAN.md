@@ -31,6 +31,7 @@ A native SwiftUI iOS app for tracking Gaelic games matches, succeeding the owner
 | Squad size | Teams start with 30 players; 31-40 are added on demand | Some squads go past 30. Adding only when needed keeps the scorer's team sheet short for most matches and leaves existing matches untouched |
 | Team colours | A fixed palette (`KitColor`, 12 colours) with a main and an optional second colour per team, stored with the match | Covers the county and club colours with one tap each, and we control how each looks so all read in sunlight; arbitrary colours would need a colour wheel and could be unreadable. A colour is only a case name, so the palette can grow |
 | Undo on the match screen | Undo covers the last event, ending a period (back into it, paused at its time) and starting one (back to the break, while nothing is recorded in it). It shows for 6 seconds after each change | A mistaken tap on the big button is the likeliest error on a sideline; undo keeps it one tap to fix without a confirmation on every period change |
+| Match screen look | The glass restyle (`design/match-screen-glass/`): a grass photo, always dark, system Liquid Glass panels, yellow accent, standard SF Pro | Chosen by the owner after trying mockups: glass on grass reads best in sunlight, and dark-only keeps the photo and glass consistent. Replaces the earlier pitch-green, light-and-dark design with condensed lettering |
 | Main tool | Claude Code in Terminal; Xcode for Previews, the Simulator and devices | Claude Code reads `CLAUDE.md` automatically, handles git and PRs, and runs builds and tests; GitHub is the shared record for every session |
 
 ## Workflow
@@ -77,7 +78,10 @@ Don't let Claude Code and Claude in Xcode edit the same files at the same time. 
 - [x] Match details: scoreboard, wall-clock timer, period transitions. The match screen to the agreed design; goal and point flags record a score straight away; Undo for the last event, a period end or a period start
 - [x] Score entry (goal, point, two-pointer, misses, shot types). The scorer sheet after each flag tap (unless switched off per team); Miss under More; Details reopens a recent shot
 - [x] Foul/card, kickout, substitution and note entry. Each is recorded at the tap from More, then its sheet opens for the details; Details reopens it. A match-wide note is in the ••• menu
-- [ ] Another pass on the match screen's look, with the owner, once tracking works end to end
+- [ ] Another pass on the match screen's look, with the owner, once tracking works end to end: the glass restyle in `design/match-screen-glass/`, in three PRs
+  - [x] Grass background, always dark, glass top bar and the clock capsule
+  - [ ] The clock button: tap to pause or resume, hold for the next step
+  - [ ] Team cards and the last-event card
 - [x] Events list with edit/delete: newest first, grouped by period; tap to edit (details and time), swipe to delete. Opened from the toolbar
 - [x] Time/period editor: tap the clock (or ••• > Adjust Clock) to move it on or back; any event's period and time can be changed from its sheet, including a period end's time
 

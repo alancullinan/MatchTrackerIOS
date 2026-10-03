@@ -1,39 +1,59 @@
 import MatchCore
 import SwiftUI
 
-/// The period name in gold and the big clock. During a break the clock shows
-/// how long the last period ran ("31 min"), never 00:00.
-struct ClockView: View {
+/// The clock capsule: the period name in gold and the big clock, with the
+/// clock button beside them and a hint underneath. During a break the clock
+/// shows how long the last period ran ("31 min"), never 00:00.
+struct ClockView<Control: View>: View {
     let match: Match
+    let hint: String
+    /// Opens the clock editor; the caller decides when that applies.
+    let onAdjust: () -> Void
+    @ViewBuilder let control: Control
 
     var body: some View {
-        VStack(spacing: 2) {
-            HStack(spacing: 8) {
-                if match.clock.period.isPlaying {
-                    Circle()
-                        .fill(match.clock.isRunning ? MatchTheme.live : MatchTheme.muted)
-                        .frame(width: 8, height: 8)
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(label)
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(1.1)
+                        .foregroundStyle(MatchTheme.gold)
+                    TimelineView(.periodic(from: match.clock.runningSince ?? .now, by: 1)) { timeline in
+                        Text(clockText(at: timeline.date))
+                            .font(.system(size: 52, weight: .semibold))
+                            .monospacedDigit()
+                            .tracking(-1)
+                            .contentTransition(.numericText())
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                    }
                 }
-                Text(match.clock.period.displayName.uppercased())
-                    .font(MatchTheme.display(18, .bold))
-                    .tracking(2.5)
-                    .foregroundStyle(MatchTheme.gold)
-            }
+                .contentShape(.rect)
+                .onTapGesture(perform: onAdjust)
+                .accessibilityElement(children: .combine)
+                .accessibilityAction(named: "Adjust clock", onAdjust)
 
-            TimelineView(.periodic(from: match.clock.runningSince ?? .now, by: 1)) { timeline in
-                Text(clockText(at: timeline.date))
-                    .font(MatchTheme.display(76))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
+                control
             }
+            .padding(.leading, 26)
+            .padding([.vertical, .trailing], 6)
+            .matchGlass(in: .capsule)
 
-            Text(note)
-                .font(.footnote)
+            Text(hint)
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(MatchTheme.muted)
-                .frame(minHeight: 18)
+                .multilineTextAlignment(.center)
+                .frame(minHeight: 16)
         }
         .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
+    }
+
+    /// "1ST HALF", or "1ST HALF · PAUSED" while play is stopped.
+    private var label: String {
+        let period = match.clock.period
+        let name = period.displayName.uppercased()
+        return period.isPlaying && !match.clock.isRunning ? "\(name) · PAUSED" : name
     }
 
     private func clockText(at now: Date) -> String {
@@ -44,16 +64,33 @@ struct ClockView: View {
         guard let lastEnd = match.lastPeriodEnd else { return "–" }
         return "\(lastEnd.time / 60) min"
     }
+}
 
-    private var note: String {
-        switch match.clock.period {
-        case .notStarted: "Tap Start at the throw-in"
-        case .halfTime, .extraTimeHalfTime: "Break"
-        case .fullTime: "Match over, unless it goes to extra time"
-        case .fullTimeAfterExtraTime: "Match over after extra time"
-        case .firstHalf, .secondHalf, .extraTimeFirstHalf, .extraTimeSecondHalf:
-            match.clock.isRunning ? "" : "Paused"
+/// The clock button's face: a gold disc with a dark glyph inside a progress
+/// ring that fills while the button is held.
+struct ClockButtonFace: View {
+    let systemImage: String
+    /// How far the ring is filled, 0 to 1.
+    var progress: Double = 0
+    var isPressed = false
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(.white.opacity(0.18), lineWidth: 4)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(.white, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            Image(systemName: systemImage)
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(MatchTheme.goldInk)
+                .frame(width: 62, height: 62)
+                .background(MatchTheme.gold, in: .circle)
+                .shadow(color: MatchTheme.gold.opacity(0.35), radius: 9, y: 6)
+                .scaleEffect(isPressed ? 0.92 : 1)
         }
+        .padding(2)
+        .frame(width: 76, height: 76)
     }
 }
 
